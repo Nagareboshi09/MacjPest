@@ -40,7 +40,6 @@ CREATE TABLE `appointments` (
   `location_address` varchar(255) NOT NULL,
   `notes` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `technician_id` int(11) DEFAULT NULL,
   `status` varchar(20) NOT NULL DEFAULT 'assigned',
   `pest_problems` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -153,7 +152,6 @@ CREATE TABLE `job_order` (
 CREATE TABLE `job_order_checklists` (
   `id` int(11) NOT NULL,
   `job_order_id` int(11) NOT NULL,
-  `technician_id` int(11) NOT NULL,
   `type_of_work` varchar(100) NOT NULL,
   `checked_items` text NOT NULL,
   `checked_tools` text DEFAULT '[]',
@@ -175,13 +173,9 @@ CREATE TABLE `joborder_feedback` (
   `feedback_id` int(11) NOT NULL,
   `job_order_id` int(11) NOT NULL,
   `client_id` int(11) NOT NULL,
-  `technician_id` int(11) NOT NULL,
   `rating` int(1) NOT NULL,
   `comments` text DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `technician_arrived` tinyint(1) NOT NULL DEFAULT 0,
-  `job_completed` tinyint(1) NOT NULL DEFAULT 0,
-  `verification_notes` text DEFAULT NULL
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -194,7 +188,7 @@ CREATE TABLE `joborder_feedback` (
 CREATE TABLE `notifications` (
   `notification_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
-  `user_type` enum('client','technician','admin') NOT NULL,
+  `user_type` enum('client','admin') NOT NULL,
   `title` varchar(255) NOT NULL,
   `message` text NOT NULL,
   `related_id` int(11) DEFAULT NULL,
@@ -327,8 +321,7 @@ ALTER TABLE `job_order`
 --
 ALTER TABLE `job_order_checklists`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `job_order_id` (`job_order_id`),
-  ADD KEY `technician_id` (`technician_id`);
+  ADD KEY `job_order_id` (`job_order_id`);
 
 --
 -- Indexes for table `joborder_feedback`
@@ -336,8 +329,7 @@ ALTER TABLE `job_order_checklists`
 ALTER TABLE `joborder_feedback`
   ADD PRIMARY KEY (`feedback_id`),
   ADD UNIQUE KEY `job_order_id` (`job_order_id`),
-  ADD KEY `client_id` (`client_id`),
-  ADD KEY `technician_id` (`technician_id`);
+  ADD KEY `client_id` (`client_id`);
 
 --
 -- Indexes for table `notifications`

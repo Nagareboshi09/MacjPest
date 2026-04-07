@@ -19,16 +19,11 @@ try {
     // Reports without Job Orders
     $without_job_orders = $total_reports - $with_job_orders;
 
-    // Reports with Feedback
-    $stmt = $conn->query("SELECT COUNT(*) AS with_feedback
-                         FROM assessment_report ar
-                         JOIN technician_feedback tf ON ar.report_id = tf.report_id");
-    $with_feedback = $stmt->fetch_assoc()['with_feedback'];
+    // Reports with Feedback (removed technician_feedback)
+    $with_feedback = 0;
 
-    // Average Feedback Rating
-    $stmt = $conn->query("SELECT AVG(rating) AS avg_rating FROM technician_feedback");
-    $avg_rating = $stmt->fetch_assoc()['avg_rating'];
-    $avg_rating = $avg_rating ? round($avg_rating, 1) : 0;
+    // Average Feedback Rating (removed technician_feedback)
+    $avg_rating = 0;
 
 } catch (Exception $e) {
     // Handle any errors
@@ -102,23 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_job_order'])) 
         exit;
     }
 
-    // Check if client has verified the technician's work
-    // This check is now optional - we'll still get the verification data if it exists
-    $verify_stmt = $conn->prepare("SELECT technician_arrived, job_completed FROM technician_feedback WHERE report_id = ?");
-    $verify_stmt->bind_param("i", $report_id);
-    $verify_stmt->execute();
-    $verify_result = $verify_stmt->get_result();
-
-    // We'll proceed with creating the job order regardless of verification status
-    // Just log the verification status for reference
-    if ($verify_result->num_rows > 0) {
-        $verification = $verify_result->fetch_assoc();
-        error_log("Job order creation for report ID $report_id - Verification status: Technician arrived: " .
-                 ($verification['technician_arrived'] ? 'Yes' : 'No') . ", Job completed: " .
-                 ($verification['job_completed'] ? 'Yes' : 'No'));
-    } else {
-        error_log("Job order creation for report ID $report_id - No verification data available");
-    }
+    // Verification check removed (technician_feedback not available)
     $verify_stmt->close();
 
     // Calculate end date (1 year from start date)
@@ -274,7 +253,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_job_order'])) 
 
 // Get filter parameters
 $client_filter = isset($_GET['client_name']) ? $conn->real_escape_string($_GET['client_name']) : '';
-$technician_filter = isset($_GET['technician_name']) ? $conn->real_escape_string($_GET['technician_name']) : '';
 
 // Fetch assessment reports with filters
 $report_query = "SELECT ar.report_id, ar.area, ar.notes AS assessment_notes, ar.recommendation, ar.attachments, ar.created_at, ar.end_time,
@@ -282,7 +260,6 @@ $report_query = "SELECT ar.report_id, ar.area, ar.notes AS assessment_notes, ar.
                         a.appointment_id, a.client_name, a.location_address, a.kind_of_place,
                         a.preferred_date, a.preferred_time, a.contact_number, a.email,
                         a.notes AS client_notes, a.pest_problems,
-                        t.username AS technician_name,
                         COUNT(jo.job_order_id) AS job_order_count,
                         jo.job_order_id,
                         jo.type_of_work,
@@ -292,17 +269,9 @@ $report_query = "SELECT ar.report_id, ar.area, ar.notes AS assessment_notes, ar.
                         jo.client_approval_status,
                         jo.client_approval_date,
                         jo.chemical_recommendations,
-                        jo.cost,
-                        tf.rating as feedback_rating,
-                        tf.comments as feedback_comments,
-                        tf.created_at as feedback_date,
-                        tf.technician_arrived,
-                        tf.job_completed,
-                        tf.verification_notes
+                        jo.cost
                  FROM assessment_report ar
                  JOIN appointments a ON ar.appointment_id = a.appointment_id
-                 LEFT JOIN technician_feedback tf ON ar.report_id = tf.report_id
-                 JOIN technicians t ON a.technician_id = t.technician_id
                  LEFT JOIN job_order jo ON ar.report_id = jo.report_id
                  WHERE 1=1";
 
@@ -311,55 +280,19 @@ if (!empty($client_filter)) {
     $report_query .= " AND a.client_name LIKE '%$client_filter%'";
 }
 
-if (!empty($technician_filter)) {
-    $report_query .= " AND t.username LIKE '%$technician_filter%'";
-}
+// Technician filter removed (technicians table not available)
 
 $report_query .= " GROUP BY ar.report_id
                  ORDER BY ar.created_at DESC";
 $report_result = $conn->query($report_query);
 
-// Prepare to fetch technicians for each job order
+// Technician assignments removed (technicians and job_order_technicians tables not available)
 $job_order_technicians = [];
-if ($report_result->num_rows > 0) {
-    $temp_result = $report_result->fetch_all(MYSQLI_ASSOC);
 
-    // Get all job order IDs that exist
-    $job_order_ids = [];
-    foreach ($temp_result as $row) {
-        if ($row['job_order_count'] > 0 && !empty($row['job_order_id'])) {
-            $job_order_ids[] = $row['job_order_id'];
-        }
-    }
+// Reset the result pointer removed as not needed
 
-    // If we have job orders, fetch their technicians
-    if (!empty($job_order_ids)) {
-        $ids_str = implode(',', $job_order_ids);
-        $tech_query = "SELECT jot.job_order_id, t.username
-                      FROM job_order_technicians jot
-                      JOIN technicians t ON jot.technician_id = t.technician_id
-                      WHERE jot.job_order_id IN ($ids_str)";
-        $tech_result = $conn->query($tech_query);
-
-        while ($tech = $tech_result->fetch_assoc()) {
-            if (!isset($job_order_technicians[$tech['job_order_id']])) {
-                $job_order_technicians[$tech['job_order_id']] = [];
-            }
-            $job_order_technicians[$tech['job_order_id']][] = $tech['username'];
-        }
-    }
-
-    // Reset the result pointer
-    $report_result = $conn->query($report_query);
-}
-
-// Fetch technicians for dropdown
-$tech_query = "SELECT technician_id, username FROM technicians";
-$tech_result = $conn->query($tech_query);
+// Technicians dropdown removed (technicians table not available)
 $technicians = [];
-while ($tech = $tech_result->fetch_assoc()) {
-    $technicians[] = $tech;
-}
 
 // Fetch unique client names for filter dropdown
 $client_query = "SELECT DISTINCT client_name FROM appointments ORDER BY client_name ASC";
@@ -1752,7 +1685,7 @@ while ($client = $client_result->fetch_assoc()) {
                     <li><a href="technicians.php"><i class="fas fa-user-md"></i> Technicians</a></li>
                     <li><a href="clients.php"><i class="fas fa-users"></i> Clients</a></li>
                     <li><a href="reports.php"><i class="fas fa-chart-bar"></i> Reports</a></li>
-                    <li><a href="../SignOut.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    <li><a href="SignOut.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
             </nav>
         </aside>
@@ -1929,17 +1862,7 @@ while ($client = $client_result->fetch_assoc()) {
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="filter-group">
-                    <label for="technician_name">Technician:</label>
-                    <select name="technician_name" id="technician_name" onchange="this.form.submit()">
-                        <option value="">All Technicians</option>
-                        <?php foreach ($technicians as $tech): ?>
-                            <option value="<?= htmlspecialchars($tech['username']) ?>" <?= ($technician_filter === $tech['username']) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($tech['username']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+                <!-- Technician filter removed -->
                 <div class="filter-group">
                     <a href="assessment_report.php" class="btn btn-secondary" style="margin-top: 24px;">
                         <i class="fas fa-sync-alt"></i> Reset Filters
@@ -1949,18 +1872,12 @@ while ($client = $client_result->fetch_assoc()) {
         </div>
 
         <!-- Filter Status Message -->
-        <?php if (!empty($client_filter) || !empty($technician_filter)): ?>
+        <?php if (!empty($client_filter)): ?>
         <div class="alert alert-info">
             <i class="fas fa-filter"></i>
             <div>
                 <strong>Filtered Results:</strong>
-                <?php if (!empty($client_filter)): ?>
-                    Client: <strong><?= htmlspecialchars($client_filter) ?></strong>
-                <?php endif; ?>
-                <?php if (!empty($technician_filter)): ?>
-                    <?php if (!empty($client_filter)): ?> | <?php endif; ?>
-                    Technician: <strong><?= htmlspecialchars($technician_filter) ?></strong>
-                <?php endif; ?>
+                Client: <strong><?= htmlspecialchars($client_filter) ?></strong>
             </div>
         </div>
         <?php endif; ?>
@@ -1974,7 +1891,7 @@ while ($client = $client_result->fetch_assoc()) {
                             <th class="col-client">Client</th>
                             <th class="col-location">Location</th>
                             <th class="col-date">Date</th>
-                            <th class="col-technician">Technician</th>
+
                             <th class="col-status">Job Order</th>
                             <th class="col-actions text-center">Actions</th>
                         </tr>
@@ -1988,7 +1905,7 @@ while ($client = $client_result->fetch_assoc()) {
                                 <?= htmlspecialchars($report['location_address']) ?>
                             </td>
                             <td><?= date('M j, Y', strtotime($report['preferred_date'])) ?></td>
-                            <td><?= htmlspecialchars($report['technician_name']) ?></td>
+
                             <td>
                                 <?php if ($report['job_order_count'] > 0): ?>
                                     <span class="job-order-badge">

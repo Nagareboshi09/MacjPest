@@ -65,7 +65,7 @@ $isLoggedIn = isset($_SESSION['role']) && $_SESSION['role'] === 'client';
       </nav>
 
       <div class="header-buttons d-flex align-items-center">
-        <a class="btn-getstarted" href="../SignIn.php">Sign In</a>
+        <a class="btn-getstarted" href="SignIn.php">Sign In</a>
       </div>
 
     </div>
@@ -81,7 +81,7 @@ $isLoggedIn = isset($_SESSION['role']) && $_SESSION['role'] === 'client';
             <h1>Professional Pest Control Solutions</h1>
             <p class="hero-text">We understand the importance of a pest-free environment for your home, business, and health. Our experienced team of licensed professionals is dedicated to providing top-notch pest control solutions tailored to meet your unique needs.</p>
             <div class="d-flex gap-4 mt-4">
-              <a href="../SignIn.php" class="btn-get-started">Schedule Service</a>
+              <a href="SignIn.php" class="btn-get-started">Schedule Service</a>
             </div>
           </div>
           <div class="col-lg-5 order-1 order-lg-2 hero-img">
@@ -231,7 +231,7 @@ $isLoggedIn = isset($_SESSION['role']) && $_SESSION['role'] === 'client';
                     <div class='service-card-content'>
                       <h4>{$service['name']}</h4>
                       <p class='service-description'>" . substr($service['description'], 0, 100) . (strlen($service['description']) > 100 ? '...' : '') . "</p>
-                      <a href='../SignIn.php' class='btn-service'>Schedule</a>
+                      <a href='SignIn.php' class='btn-service'>Schedule</a>
                     </div>
                   </div>
                 </div>";
@@ -262,9 +262,9 @@ $isLoggedIn = isset($_SESSION['role']) && $_SESSION['role'] === 'client';
                 // Connect to the database
                 require_once '../db_config.php';
 
-                // Query to get feedback with 4 or 5 stars from both tables
+                // Query to get feedback with 4 or 5 stars from job order feedback
                 $feedback_query = "
-                    (SELECT
+                    SELECT
                         jf.comments,
                         jf.rating,
                         jf.created_at,
@@ -274,22 +274,7 @@ $isLoggedIn = isset($_SESSION['role']) && $_SESSION['role'] === 'client';
                         'job_order' AS feedback_type
                     FROM joborder_feedback jf
                     JOIN clients c ON jf.client_id = c.client_id
-                    WHERE jf.rating >= 4)
-
-                    UNION
-
-                    (SELECT
-                        tf.comments,
-                        tf.rating,
-                        tf.created_at,
-                        c.first_name,
-                        c.last_name,
-                        c.type_of_place,
-                        'technician' AS feedback_type
-                    FROM technician_feedback tf
-                    JOIN clients c ON tf.client_id = c.client_id
-                    WHERE tf.rating >= 4)
-
+                    WHERE jf.rating >= 4
                     ORDER BY created_at DESC
                     LIMIT 10";
 
@@ -397,7 +382,7 @@ $isLoggedIn = isset($_SESSION['role']) && $_SESSION['role'] === 'client';
             <h3>Ready for a Pest-Free Environment?</h3>
             <p>Schedule a consultation with our pest control experts today. We'll create a customized treatment plan tailored to your specific needs.</p>
             <div class="cta-btn-container">
-              <a class="cta-btn align-self-start" href="../SignIn.php">Get Started</a>
+              <a class="cta-btn align-self-start" href="SignIn.php">Get Started</a>
             </div>
           </div>
           <div class="col-lg-4 col-md-6 order-first order-md-last d-flex align-items-center">
@@ -434,7 +419,7 @@ $isLoggedIn = isset($_SESSION['role']) && $_SESSION['role'] === 'client';
             <li><a href="#hero">Home</a></li>
             <li><a href="#about">About Us</a></li>
             <li><a href="#services">Services</a></li>
-            <li><a href="../SignIn.php">Sign In</a></li>
+            <li><a href="SignIn.php">Sign In</a></li>
             <li><a href="#footer">Contact</a></li>
           </ul>
         </div>

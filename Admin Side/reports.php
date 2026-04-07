@@ -656,7 +656,7 @@ $filtered_monthly_actual_revenue = array_slice($monthly_actual_revenue, 0, $curr
                     <li><a href="technicians.php"><i class="fas fa-user-md"></i> Technicians</a></li>
                     <li><a href="clients.php"><i class="fas fa-users"></i> Clients</a></li>
                     <li class="active"><a href="reports.php"><i class="fas fa-chart-bar"></i> Reports</a></li>
-                    <li><a href="../SignOut.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    <li><a href="SignOut.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
             </nav>
         </aside>

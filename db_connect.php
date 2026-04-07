@@ -7,7 +7,7 @@ ini_set('display_errors', 1);
 try {
     // Connect to localhost
     error_log("Attempting to connect to local database");
-    $conn = new mysqli("localhost", "root", "", "macj_pest_control");
+    $conn = new mysqli("localhost", "root", "", "macjpest");
     error_log("Connected to local database");
 } catch (Exception $e) {
     error_log("Failed to connect to production database: " . $e->getMessage());

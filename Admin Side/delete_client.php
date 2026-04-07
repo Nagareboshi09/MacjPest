@@ -59,10 +59,7 @@ try {
         while ($report = $reportsResult->fetch_assoc()) {
             $report_id = $report['report_id'];
             
-            // Delete technician feedback
-            $stmt = $conn->prepare("DELETE FROM technician_feedback WHERE report_id = ?");
-            $stmt->bind_param("i", $report_id);
-            $stmt->execute();
+            // Technician feedback delete removed (table not available)
             
             // Delete job orders and job order technicians
             $stmt = $conn->prepare("SELECT job_order_id FROM job_order WHERE report_id = ?");
