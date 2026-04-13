@@ -12,7 +12,7 @@ try {
     $result = $conn->query("SHOW TABLES LIKE 'services'");
     if ($result->num_rows == 0) {
         // Table doesn't exist, create it
-        $sql = file_get_contents('../create_services_table.sql');
+        $sql = file_get_contents('../macjpest.sql');
         if ($conn->multi_query($sql)) {
             do {
                 // Process each result set

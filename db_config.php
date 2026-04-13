@@ -1,5 +1,5 @@
 <?php
-$dbname = 'macj_pest_control';
+$dbname = 'macjpest';
 $user = 'root';
 $pass = '';
 

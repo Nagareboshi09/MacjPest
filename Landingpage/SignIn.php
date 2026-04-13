@@ -55,9 +55,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://unpkg.com/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/css/main.css" rel="stylesheet">
     <title>Login - MacJ Pest Control</title>
 </head>
 <body>
+  <a href="landing_updated.php" class="floating-home-btn">BACK AT LANDING PAGE</a>
 <section class="bg-light py-3 py-md-5">
   <div class="container">
     <div class="row justify-content-center">
@@ -68,8 +70,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
               <div class="alert alert-danger"><?= $error ?></div>
             <?php endif; ?>
             <div class="text-center mb-3">
-              <a href="landing.php">
-                <img src="Landingpage/assets/img/MACJLOGO.png" alt="Logo" width="175" height="57">
+              <a href="landing_updated.php">
+                <img src="assets/img/MACJLOGO.png" alt="Logo" width="175" height="57">
               </a>
             </div>
             <h2 class="fs-6 fw-normal text-center text-secondary mb-4">Sign in to your account</h2>
@@ -95,16 +97,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         Keep me logged in
                       </label>
                     </div>
-                    <a href="#!" class="link-primary text-decoration-none">Forgot password?</a>
                   </div>
                 </div>
                 <div class="col-12">
                   <div class="d-grid my-3">
                     <button class="btn btn-primary btn-lg" type="submit">Log in</button>
                   </div>
-                </div>
-                <div class="col-12">
-                  <p class="m-0 text-secondary text-center">Don't have an account? <a href="SignUp.php" class="link-primary text-decoration-none">Sign up</a></p>
                 </div>
               </div>
             </form>

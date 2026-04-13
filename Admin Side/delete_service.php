@@ -24,27 +24,61 @@ if (empty($service_id)) {
 }
 
 try {
-    // Check if this is a default service (first 5 services)
-    $check_stmt = $conn->prepare("SELECT service_id FROM services ORDER BY service_id LIMIT 5");
+    // Check if this is a default service by name
+    $default_service_names = [
+        'General Pest Control',
+        'Termite Control',
+        'Rodent Control',
+        'Disinfection',
+        'Weed Control'
+    ];
+
+    $check_stmt = $conn->prepare("SELECT name FROM services WHERE service_id = ?");
+    $check_stmt->bind_param("i", $service_id);
     $check_stmt->execute();
     $result = $check_stmt->get_result();
-    $default_ids = [];
-    
-    while ($row = $result->fetch_assoc()) {
-        $default_ids[] = $row['service_id'];
+
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        if (in_array($row['name'], $default_service_names)) {
+            echo json_encode(['success' => false, 'error' => 'Default services cannot be deleted']);
+            exit;
+        }
     }
     
-    if (in_array($service_id, $default_ids)) {
-        echo json_encode(['success' => false, 'error' => 'Default services cannot be deleted']);
+    // Check if service exists
+    $check_stmt = $conn->prepare("SELECT image FROM services WHERE service_id = ?");
+    $check_stmt->bind_param("i", $service_id);
+    $check_stmt->execute();
+    $check_result = $check_stmt->get_result();
+
+    if ($check_result->num_rows === 0) {
+        echo json_encode(['success' => false, 'error' => 'Service not found']);
         exit;
     }
-    
+
+    $row = $check_result->fetch_assoc();
+    $image_path = $row['image'];
+
     // Delete the service
     $stmt = $conn->prepare("DELETE FROM services WHERE service_id = ?");
     $stmt->bind_param("i", $service_id);
-    
+
     if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'Service deleted successfully']);
+        // Check if any rows were actually deleted
+        if ($stmt->affected_rows === 0) {
+            echo json_encode(['success' => false, 'error' => 'Service could not be deleted']);
+            exit;
+        }
+
+        // Delete the image file if it exists
+        if ($image_path && file_exists("../uploads/services/" . $image_path)) {
+            if (!unlink("../uploads/services/" . $image_path)) {
+                // Log error but don't fail the deletion
+                error_log("Failed to delete image file: ../uploads/services/" . $image_path);
+            }
+        }
+        echo json_encode(['success' => true, 'message' => 'Service and associated image deleted successfully']);
     } else {
         throw new Exception($stmt->error);
     }
