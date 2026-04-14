@@ -72,4 +72,26 @@
     document.addEventListener('scroll', toggleScrollTop);
   }
 
+  /**
+   * Toggle navigation items in dropdown based on screen size
+   * Show nav items on mobile (<=1199px), hide on desktop
+   */
+  function toggleDropdownNav() {
+    const dropdownMenu = document.querySelector('.dropdown-menu');
+    if (!dropdownMenu) return;
+
+    const navItems = dropdownMenu.querySelectorAll('li:not(:last-child)');
+    const isMobile = window.innerWidth <= 1199;
+    console.log('Toggling dropdown nav, isMobile:', isMobile, 'window width:', window.innerWidth);
+
+    navItems.forEach(item => {
+      if (item.querySelector('a[href="SignIn.php"]')) return; // Skip Admin Login
+      item.classList.toggle('d-none', !isMobile);
+    });
+  }
+
+  // Initialize on load and resize
+  document.addEventListener('DOMContentLoaded', toggleDropdownNav);
+  window.addEventListener('resize', toggleDropdownNav);
+
 })();

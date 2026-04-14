@@ -88,5 +88,5 @@ if ($conn->query($insertSql) === TRUE) {
     echo "Error adding test record: " . $conn->error . "<br>";
 }
 
-echo "<br><a href='calendar.php'>Go back to calendar</a>";
+
 ?>

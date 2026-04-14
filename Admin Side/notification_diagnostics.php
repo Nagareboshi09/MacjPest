@@ -279,7 +279,7 @@ require_once '../db_config.php';
             <div class="result-box" id="markAllReadResult"></div>
         </div>
         
-        <p><a href="reports.php">&larr; Back to Reports</a></p>
+
     </div>
     
     <script>

@@ -183,7 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ?></pre>
         </div>
         
-        <p><a href="reports.php">&larr; Back to Reports</a></p>
+
     </div>
     
     <!-- Notification Scripts -->

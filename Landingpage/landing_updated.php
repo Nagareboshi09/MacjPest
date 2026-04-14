@@ -126,7 +126,7 @@ if ($isLoggedIn) {
           <li><a href="#service-area">Service Area</a></li>
           <li><a href="#footer">Contact</a></li>
         </ul>
-        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+
       </nav>
 
       <div class="header-buttons d-flex align-items-center">
@@ -135,9 +135,15 @@ if ($isLoggedIn) {
         <?php else: ?>
           <div class="dropdown">
             <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="border: none; background: none; color: var(--accent-color);">
-              <i class="bi bi-list" style="font-size: 24px;"></i>
+              <i class="bi bi-menu-button-wide" style="font-size: 24px;"></i>
             </button>
             <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="#hero">Home</a></li>
+              <li><a class="dropdown-item" href="#about">About</a></li>
+              <li><a class="dropdown-item" href="#services">Services</a></li>
+              <li><a class="dropdown-item" href="#service-area">Service Area</a></li>
+              <li><a class="dropdown-item" href="#footer">Contact</a></li>
+              <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item" href="SignIn.php">Admin Login</a></li>
             </ul>
           </div>
@@ -157,7 +163,7 @@ if ($isLoggedIn) {
             <h1>Professional Pest Control Solutions</h1>
             <p class="hero-text">We understand the importance of a pest-free environment for your home, business, and health. Our experienced team of licensed professionals is dedicated to providing top-notch pest control solutions tailored to meet your unique needs.</p>
             <div class="d-flex gap-4 mt-4">
-              <a href="SignIn.php" class="btn-get-started">Schedule Service</a>
+              <a href="#footer" class="btn-get-started">Get a Quotation!</a>
             </div>
           </div>
           <div class="col-lg-6 order-1 order-lg-2 hero-img">
@@ -185,8 +191,14 @@ if ($isLoggedIn) {
             <div class="about-img position-relative mb-4">
               <img src="assets/img/teammacj.jpg" class="img-fluid rounded-4 shadow" alt="MACJ Pest Control Team" loading="lazy">
               <div class="experience-badge">
-                <span class="years">21+</span>
-                <span class="text">Years of Experience</span>
+                <div class="stat-item">
+                  <span class="years">21+</span>
+                  <span class="text">Years</span>
+                </div>
+                <div class="stat-item">
+                  <span class="years">1000+</span>
+                  <span class="text">Projects</span>
+                </div>
               </div>
             </div>
             <h3 class="mb-3">MACJ PEST CONTROL</h3>
@@ -229,13 +241,18 @@ if ($isLoggedIn) {
                 </div>
               </div><!-- Icon-Box -->
 
-              <div class="col-md-6">
-                <div class="icon-box">
-                  <i class="fas fa-award text-primary"></i>
-                  <h4>CERTIFICATIONS</h4>
-                  <p>DUNS accredited, FPA License Fumigator and Exterminator, FDA License to Operate and member of KAPESTCOPI INC. (Kapisanan ng mga Pest Control Operators ng Pilipinas).</p>
-                </div>
-              </div><!-- Icon-Box -->
+               <div class="col-md-6">
+                 <div class="icon-box">
+                   <i class="fas fa-award text-primary"></i>
+                   <h4>CERTIFICATIONS</h4>
+                    <ul class="certifications-list">
+                      <li><i class="fas fa-certificate"></i> DUNS Accredited</li>
+                      <li><i class="fas fa-certificate"></i> FPA License Fumigator and Exterminator</li>
+                      <li><i class="fas fa-certificate"></i> FDA License to Operate</li>
+                      <li><i class="fas fa-certificate"></i> Member of KAPESTCOPI INC.</li>
+                   </ul>
+                   </div>
+               </div><!-- Icon-Box -->
 
               <div class="col-md-6">
                 <div class="icon-box">
@@ -407,11 +424,11 @@ if ($isLoggedIn) {
             30 Sto. Tomas St. <br>
             Brgy Don Manuel<br>
             Quezon City <br><br>
-            <strong>Phone:</strong> (02)7369-3904/880-554040<br>
-            <strong>Mobile:</strong> 09171457306 / 09055158398<br>
-            <strong>Email:</strong> info@macjpestcontrol.com<br>
+            <strong>Phone:</strong> (02)7 369.3904/8 805.5404<br>
+            <strong>Mobile:</strong> +63 905.515.8398<br>
+            <strong>Email:</strong> macpest@yahoo.com<br>
           </p>
-          <!-- Contact Form -->
+          <!-- Contact Form 
           <form action="contact.php" method="post" class="mt-3">
             <div class="mb-2">
               <input type="text" name="name" class="form-control" placeholder="Your Name" required aria-label="Your Name">
@@ -424,7 +441,7 @@ if ($isLoggedIn) {
             </div>
             <button type="submit" class="btn btn-primary btn-sm">Send Message</button>
           </form>
-        </div>
+        </div> -->
 
       </div>
     </div>
@@ -446,7 +463,7 @@ if ($isLoggedIn) {
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <!-- Main JS File (Simplified) -->
-  <script src="assets/js/main-simple.min.js"></script>
+  <script src="assets/js/main-simple.js"></script>
 
   <?php if ($isLoggedIn): ?>
   <!-- Client-side JS for logged-in users -->
