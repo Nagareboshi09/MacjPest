@@ -49,8 +49,34 @@
     }
   }
 
-  // Initialize carousels when DOM is fully loaded
-  document.addEventListener('DOMContentLoaded', initCarousels);
+  /**
+   * Service card animations on scroll
+   */
+  function initServiceAnimations() {
+    const serviceCards = document.querySelectorAll('.service-card');
+
+    if (serviceCards.length > 0) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+
+      serviceCards.forEach(card => {
+        observer.observe(card);
+      });
+    }
+  }
+
+  // Initialize carousels and service animations when DOM is fully loaded
+  document.addEventListener('DOMContentLoaded', function() {
+    initCarousels();
+    initServiceAnimations();
+  });
 
   /**
    * Scroll top button

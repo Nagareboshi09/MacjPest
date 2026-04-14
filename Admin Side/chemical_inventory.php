@@ -757,14 +757,32 @@ try {
                                             <small class="form-text text-muted">Amount of chemical per liter of water</small>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label><i class="fas fa-expand"></i> Area Coverage (m² per liter)</label>
-                                            <input type="number" step="0.1" min="0" class="form-control"
-                                                name="area_coverage" id="area_coverage" value="100" placeholder="e.g., 100 m² per liter">
-                                            <small class="form-text text-muted">Area covered by 1 liter of diluted solution</small>
-                                        </div>
-                                    </div>
+                                     <div class="col-md-6">
+                                         <div class="form-group">
+                                             <label><i class="fas fa-expand"></i> Area Coverage (m² per liter)</label>
+                                             <input type="number" step="0.1" min="0" class="form-control"
+                                                 name="area_coverage" id="area_coverage" value="100" placeholder="e.g., 100 m² per liter">
+                                             <small class="form-text text-muted">Area covered by 1 liter of diluted solution</small>
+                                         </div>
+                                     </div>
+                                 </div>
+                                 <div class="row mt-3">
+                                     <div class="col-md-6">
+                                         <div class="form-group">
+                                             <label><i class="fas fa-calculator"></i> Manual Total Solution (liters for 200 m²)</label>
+                                             <input type="number" step="0.01" min="0" class="form-control"
+                                                 name="manual_total_solution" id="manual_total_solution" placeholder="e.g., 2.0">
+                                             <small class="form-text text-muted">Enter total solution needed manually (overrides automatic calculation)</small>
+                                         </div>
+                                     </div>
+                                     <div class="col-md-6">
+                                         <div class="form-group">
+                                             <label><i class="fas fa-flask"></i> Manual Total Chemical (ml for 200 m²)</label>
+                                             <input type="number" step="0.01" min="0" class="form-control"
+                                                 name="manual_total_chemical" id="manual_total_chemical" placeholder="e.g., 40.0">
+                                             <small class="form-text text-muted">Enter total chemical needed manually (overrides automatic calculation)</small>
+                                         </div>
+                                     </div>
                                 </div>
                                 <div class="row mt-3">
                                     <div class="col-12">
@@ -1030,15 +1048,33 @@ try {
                                             <small class="form-text text-muted">Amount of chemical per liter of water</small>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label><i class="fas fa-expand"></i> Area Coverage (m² per liter)</label>
-                                            <input type="number" step="0.1" min="0" class="form-control"
-                                                name="area_coverage" id="editAreaCoverage" placeholder="e.g., 100 m² per liter">
-                                            <small class="form-text text-muted">Area covered by 1 liter of diluted solution</small>
-                                        </div>
-                                    </div>
-                                </div>
+                                     <div class="col-md-6">
+                                         <div class="form-group">
+                                             <label><i class="fas fa-expand"></i> Area Coverage (m² per liter)</label>
+                                             <input type="number" step="0.1" min="0" class="form-control"
+                                                 name="area_coverage" id="editAreaCoverage" placeholder="e.g., 100 m² per liter">
+                                             <small class="form-text text-muted">Area covered by 1 liter of diluted solution</small>
+                                         </div>
+                                     </div>
+                                 </div>
+                                 <div class="row mt-3">
+                                     <div class="col-md-6">
+                                         <div class="form-group">
+                                             <label><i class="fas fa-calculator"></i> Manual Total Solution (liters for 200 m²)</label>
+                                             <input type="number" step="0.01" min="0" class="form-control"
+                                                 name="manual_total_solution" id="editManualTotalSolution" placeholder="e.g., 2.0">
+                                             <small class="form-text text-muted">Enter total solution needed manually (overrides automatic calculation)</small>
+                                         </div>
+                                     </div>
+                                     <div class="col-md-6">
+                                         <div class="form-group">
+                                             <label><i class="fas fa-flask"></i> Manual Total Chemical (ml for 200 m²)</label>
+                                             <input type="number" step="0.01" min="0" class="form-control"
+                                                 name="manual_total_chemical" id="editManualTotalChemical" placeholder="e.g., 40.0">
+                                             <small class="form-text text-muted">Enter total chemical needed manually (overrides automatic calculation)</small>
+                                         </div>
+                                     </div>
+                                 </div>
                                 <div class="row mt-3">
                                     <div class="col-12">
                                         <div class="card bg-light">

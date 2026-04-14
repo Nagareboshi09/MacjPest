@@ -3,7 +3,11 @@
 session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
- header("Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net; frame-src 'self' https://www.google.com; img-src 'self' https://*.google.com;");
+
+// Generate nonce for CSP
+$nonce = base64_encode(random_bytes(16));
+
+header("Content-Security-Policy: default-src 'self'; script-src 'strict-dynamic' 'nonce-{$nonce}'; style-src 'self' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://r2cdn.perplexity.ai; frame-src 'self' https://www.google.com; img-src 'self' https://*.google.com; connect-src 'self' https://cdn.jsdelivr.net https://r2cdn.perplexity.ai; object-src 'none'; base-uri 'self';");
 
 // Define constants for paths
 define('ASSETS_PATH', 'assets/');
@@ -79,7 +83,6 @@ if ($isLoggedIn) {
   <link href="https://fonts.googleapis.com" rel="preconnect">
   <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
-  <link href="https://googleapis.com" rel="stylesheet">
 
   <!-- Vendor CSS Files -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -89,10 +92,7 @@ if ($isLoggedIn) {
   <!-- Main CSS File -->
    <link href="assets/css/main.css" rel="stylesheet">
 
-  <!-- Inline styles for smooth scrolling -->
-  <style>html { scroll-behavior: smooth; }</style>
-
-  <?php if ($isLoggedIn): ?>
+   <?php if ($isLoggedIn): ?>
   <!-- Client-side CSS for logged-in users -->
   <link href="../Client Side/css/variables.css" rel="stylesheet">
   <link href="../Client Side/css/main.css" rel="stylesheet">
@@ -134,8 +134,8 @@ if ($isLoggedIn) {
           <a class="btn-getstarted" href="SignIn.php">Admin</a>
         <?php else: ?>
           <div class="dropdown">
-            <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="border: none; background: none; color: var(--accent-color);">
-              <i class="bi bi-menu-button-wide" style="font-size: 24px;"></i>
+            <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-menu-button-wide"></i>
             </button>
             <ul class="dropdown-menu">
               <li><a class="dropdown-item" href="#hero">Home</a></li>
@@ -326,17 +326,16 @@ if ($isLoggedIn) {
 
                 // Output the service card
                 $safe_name = htmlspecialchars($service['name'], ENT_QUOTES, 'UTF-8');
-                $safe_description = htmlspecialchars(substr($service['description'], 0, 100) . (strlen($service['description']) > 100 ? '...' : ''), ENT_QUOTES, 'UTF-8');
                 $full_description = htmlspecialchars($service['description'], ENT_QUOTES, 'UTF-8');
                 echo "
                 <div class='col-md-6 col-lg-4 mb-4'>
                   <div class='service-card'>
                     <div class='service-img-container'>
                       <img src='{$image_path}' class='img-fluid service-img' alt='{$safe_name}' loading='lazy'>
-                      <div class='service-card-content'>
-                        <h4>{$safe_name}</h4>
-                        <p class='service-description'>{$safe_description}</p>
-                      </div>
+                    </div>
+                    <div class='service-card-content'>
+                      <h4>{$safe_name}</h4>
+                      <p class='service-description'>{$full_description}</p>
                     </div>
                   </div>
                 </div>";
@@ -361,7 +360,7 @@ if ($isLoggedIn) {
         <div class="row">
           <div class="col-lg-6">
             <div class="map-container">
-              <iframe src="https://www.google.com/maps/embed?pb=!1m10!1m8!1m3!1d1055!2d121.0002446!3d14.617143!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sph!4v1713000000000&q=30%20Sto.%20Tomas%20St.%20Brgy%20Don%20Manuel%20Quezon%20City" width="100%" height="400" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+              <iframe src="https://www.google.com/maps/embed?pb=!1m10!1m8!1m3!1d1055!2d121.0002446!3d14.617143!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sph!4v1713000000000&q=30%20Sto.%20Tomas%20St.%20Brgy%20Don%20Manuel%20Quezon%20City" width="100%" height="400" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
           </div>
           <div class="col-lg-6 d-flex flex-column justify-content-center">
@@ -395,7 +394,7 @@ if ($isLoggedIn) {
       <div class="row gy-4">
         <div class="col-lg-5 col-md-12 footer-info">
           <a href="landing_updated.php" class="logo d-flex align-items-center mb-3">
-            <img src="assets/img/MACJLOGO.png" alt="MACJ Pest Control" class="img-fluid" style="max-height: 60px;" loading="lazy">
+            <img src="assets/img/MACJLOGO.png" alt="MACJ Pest Control" class="img-fluid" loading="lazy">
           </a>
           <p>MacJ Pest Control Services provides professional pest management solutions for residential and commercial properties. With over 21 years of experience, we deliver effective and eco-friendly pest control services.</p>
           <h4 class="mt-4">Connect With Us</h4>
@@ -460,48 +459,19 @@ if ($isLoggedIn) {
 
 
   <!-- Vendor JS Files -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" nonce="<?php echo $nonce; ?>"></script>
 
   <!-- Main JS File (Simplified) -->
-  <script src="assets/js/main-simple.js"></script>
+  <script src="assets/js/main-simple.js" nonce="<?php echo $nonce; ?>"></script>
 
   <?php if ($isLoggedIn): ?>
   <!-- Client-side JS for logged-in users -->
-  <script src="../Client Side/js/main.js"></script>
-  <script src="../Client Side/js/sidebar.js"></script>
-  <script src="../Client Side/js/form-validation-fix.js"></script>
+  <script src="../Client Side/js/main.js" nonce="<?php echo $nonce; ?>"></script>
+  <script src="../Client Side/js/sidebar.js" nonce="<?php echo $nonce; ?>"></script>
+  <script src="../Client Side/js/form-validation-fix.js" nonce="<?php echo $nonce; ?>"></script>
   <?php endif; ?>
 
-  <!-- Additional script for services section animations on scroll -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // Add animation to service items when they come into view
-      const serviceItems = document.querySelectorAll('.service-item');
 
-      if (serviceItems.length > 0) {
-        // Simple animation when scrolling to service items
-        const observer = new IntersectionObserver((entries) => {
-          entries.forEach(entry => {
-            if (entry.isIntersecting) {
-              entry.target.style.opacity = '1';
-              entry.target.style.transform = 'translateY(0)';
-              observer.unobserve(entry.target);
-            }
-          });
-        }, { threshold: 0.1 });
-
-        // Set initial styles and observe each service item
-        serviceItems.forEach(item => {
-          item.style.opacity = '0';
-          item.style.transform = 'translateY(20px)';
-          item.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-          observer.observe(item);
-        });
-      }
-
-
-    });
-  </script>
 
 </body>
 
