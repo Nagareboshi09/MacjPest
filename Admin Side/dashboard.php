@@ -78,10 +78,7 @@ $sql_pending = "SELECT COUNT(*) AS pending_appointments FROM appointments WHERE 
 $result_pending = $conn->query($sql_pending);
 $pending_appointments = $result_pending->fetch_assoc()['pending_appointments'];
 
-// Total Technicians
-$sql_technicians = "SELECT COUNT(*) AS total_technicians FROM technicians";
-$result_technicians = $conn->query($sql_technicians);
-$total_technicians = $result_technicians->fetch_assoc()['total_technicians'];
+
 
 // Total Assessment Reports
 $sql_reports = "SELECT COUNT(*) AS total_reports FROM assessment_report";
@@ -98,6 +95,13 @@ $sql_ongoing = "SELECT COUNT(*) AS ongoing_treatments FROM job_order
                 WHERE preferred_date >= CURDATE()";
 $result_ongoing = $conn->query($sql_ongoing);
 $ongoing_treatments = $result_ongoing->fetch_assoc()['ongoing_treatments'];
+
+// Total Chemicals
+$sql_total_chemicals = "SELECT COUNT(*) AS total_chemicals FROM chemical_inventory";
+$result_total_chemicals = $conn->query($sql_total_chemicals);
+$total_chemicals = $result_total_chemicals->fetch_assoc()['total_chemicals'];
+
+
 
 
 
@@ -213,6 +217,12 @@ while ($row = $result_near_expiration->fetch_assoc()) {
     $near_expiration_chemicals[] = $row;
 }
 
+// Low stock chemicals count
+$low_stock_count = count($low_quantity_chemicals);
+
+// Near expiration count
+$near_expiry_count = count($near_expiration_chemicals);
+
 // Active Users (Admin users/office staff)
 $sql_active_users = "SELECT staff_id, username, email
                      FROM office_staff
@@ -281,18 +291,7 @@ $sql_upcoming_jobs = "SELECT COUNT(*) AS upcoming_jobs FROM job_order
 $result_upcoming_jobs = $conn->query($sql_upcoming_jobs);
 $upcoming_jobs = $result_upcoming_jobs->fetch_assoc()['upcoming_jobs'];
 
-// 4. Technicians deployed (technicians assigned to appointments or job orders)
-$sql_deployed_techs = "SELECT COUNT(DISTINCT technician_id) AS deployed_techs
-                      FROM (
-                          SELECT technician_id FROM appointments
-                          WHERE technician_id IS NOT NULL AND status IN ('assigned', 'in_progress')
-                          UNION
-                          SELECT technician_id FROM job_order_technicians
-                          JOIN job_order ON job_order_technicians.job_order_id = job_order.job_order_id
-                          WHERE job_order.preferred_date >= CURDATE()
-                      ) AS deployed";
-$result_deployed_techs = $conn->query($sql_deployed_techs);
-$deployed_techs = $result_deployed_techs->fetch_assoc()['deployed_techs'];
+
 
 // 5. Active treatments (job orders in progress)
 $sql_active_treatments = "SELECT COUNT(*) AS active_treatments FROM job_order
@@ -313,11 +312,14 @@ while ($row = $result_service_trends->fetch_assoc()) {
     $service_trends[] = $row;
 }
 
+// Total service types
+$total_service_types = count($service_trends);
+
 // 7. Completed treatments today (job orders completed today)
-$sql_completed_today = "SELECT COUNT(*) AS completed_today FROM job_order_report
-                       WHERE DATE(created_at) = CURDATE()";
-$result_completed_today = $conn->query($sql_completed_today);
-$completed_today = $result_completed_today->fetch_assoc()['completed_today'];
+// $sql_completed_today = "SELECT COUNT(*) AS completed_today FROM job_order_report
+//                        WHERE DATE(created_at) = CURDATE()";
+// $result_completed_today = $conn->query($sql_completed_today);
+// $completed_today = $result_completed_today->fetch_assoc()['completed_today'];
 
 // 8. Pending appointments (appointments with status 'assigned')
 $sql_pending_appts = "SELECT COUNT(*) AS pending_appts FROM appointments
@@ -1194,17 +1196,7 @@ $completion_percentage = 0; // 0% since the job is not completed
                                     </div>
                                 </div>
 
-                                <!-- Technicians Deployed -->
-                                <div class="overview-card">
-                                    <div class="overview-icon techs">
-                                        <i class="fas fa-hard-hat"></i>
-                                    </div>
-                                    <div class="overview-info">
-                                        <h3>Technicians Deployed</h3>
-                                        <p class="overview-value"><?php echo $deployed_techs; ?></p>
-                                        <span class="overview-label">Currently on assignment</span>
-                                    </div>
-                                </div>
+
 
                                 <!-- Active Treatments -->
                                 <div class="overview-card">
@@ -1272,73 +1264,44 @@ $completion_percentage = 0; // 0% since the job is not completed
 
                 <!-- Top Row Cards -->
                 <div class="dashboard-row">
-                    <!-- Weekly Sales Card -->
+                    <!-- Chemical Inventory Card -->
                     <div class="dashboard-card">
                         <div class="card-header">
-                            <h3>Weekly Sales</h3>
+                            <h3><i class="fas fa-flask"></i> Chemical Inventory</h3>
                         </div>
                         <div class="card-body">
-                            <div class="card-value">₱<?php echo number_format($weekly_sales, 2); ?></div>
-                            <div class="card-trend <?php echo $weekly_growth >= 0 ? 'positive' : 'negative'; ?>">
-                                <i class="fas <?php echo $weekly_growth >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'; ?>"></i>
-                                <?php echo abs($weekly_growth); ?>%
+                            <div class="card-value"><?php echo $total_chemicals; ?></div>
+                            <div class="card-trend warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <?php echo $low_stock_count; ?> low stock, <?php echo $near_expiry_count; ?> expiring soon
                             </div>
                             <div class="card-chart">
-                                <canvas id="weeklySalesChart" height="60"></canvas>
+                                <canvas id="chemicalChart" height="60"></canvas>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Total Job Orders Card -->
+                    <!-- Services Card -->
                     <div class="dashboard-card">
                         <div class="card-header">
-                            <h3>Total Job Orders</h3>
+                            <h3><i class="fas fa-concierge-bell"></i> Services</h3>
                         </div>
                         <div class="card-body">
-                            <div class="card-value"><?php echo number_format($total_completed_jobs, 1); ?></div>
-                            <div class="card-trend <?php echo $job_growth >= 0 ? 'positive' : 'negative'; ?>">
-                                <i class="fas <?php echo $job_growth >= 0 ? 'fa-arrow-up' : 'fa-arrow-down'; ?>"></i>
-                                <?php echo abs($job_growth); ?>%
+                            <div class="card-value"><?php echo $total_service_types; ?></div>
+                            <div class="card-trend positive">
+                                <i class="fas fa-chart-line"></i>
+                                Service types available
                             </div>
                             <div class="card-chart">
-                                <canvas id="totalJobsChart" height="60"></canvas>
+                                <canvas id="servicesChart" height="60"></canvas>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Market Share Card -->
+                    <!-- Clients Card -->
                     <div class="dashboard-card">
                         <div class="card-header">
-                            <h3>Pest Distribution</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="market-share-chart">
-                                <canvas id="marketShareChart" height="120"></canvas>
-                            </div>
-                            <div class="market-share-legend">
-                                <?php
-                                $colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
-                                $i = 0;
-                                foreach ($pest_types as $pest) {
-                                    if ($i < 5) {
-                                        $percentage = $total_pest_count > 0 ? round(($pest['count'] / $total_pest_count) * 100) : 0;
-                                        echo '<div class="legend-item">';
-                                        echo '<span class="legend-color" style="background-color: ' . $colors[$i] . '"></span>';
-                                        echo '<span class="legend-label">' . $pest['pest_problems'] . '</span>';
-                                        echo '<span class="legend-value">' . $percentage . '%</span>';
-                                        echo '</div>';
-                                        $i++;
-                                    }
-                                }
-                                ?>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Active Clients Card -->
-                    <div class="dashboard-card">
-                        <div class="card-header">
-                            <h3>Active Clients</h3>
+                            <h3><i class="fas fa-users"></i> Clients</h3>
                         </div>
                         <div class="card-body">
                             <div class="card-value"><?php echo $total_clients; ?></div>
@@ -1563,40 +1526,17 @@ $completion_percentage = 0; // 0% since the job is not completed
 
         function initializeCharts() {
 
-            // Weekly Sales Chart
-            const weeklySalesCtx = document.getElementById('weeklySalesChart');
-            if (weeklySalesCtx) {
-                // Get weekly sales data from PHP
-                <?php
-                // Get daily sales for the current week
-                $daily_sales = array_fill(0, 7, 0); // Initialize with zeros for each day
-                $day_labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-                // Query to get daily sales for the current week
-                $sql_daily_sales = "SELECT
-                                    DAYOFWEEK(preferred_date) as day_of_week,
-                                    COALESCE(SUM(cost), 0) as daily_sales
-                                FROM job_order
-                                WHERE YEARWEEK(preferred_date, 1) = YEARWEEK(CURDATE(), 1)
-                                GROUP BY DAYOFWEEK(preferred_date)";
-                $result_daily_sales = $conn->query($sql_daily_sales);
-
-                // MySQL DAYOFWEEK() returns 1 for Sunday, 2 for Monday, etc.
-                // We need to adjust to match our array (0 for Monday, 6 for Sunday)
-                while ($row = $result_daily_sales->fetch_assoc()) {
-                    $index = ($row['day_of_week'] + 5) % 7; // Convert to our index (0-6, Mon-Sun)
-                    $daily_sales[$index] = (float)$row['daily_sales'];
-                }
-                ?>
-
-                new Chart(weeklySalesCtx, {
+            // Chemical Inventory Chart
+            const chemicalCtx = document.getElementById('chemicalChart');
+            if (chemicalCtx) {
+                new Chart(chemicalCtx, {
                     type: 'bar',
                     data: {
-                        labels: <?php echo json_encode($day_labels); ?>,
+                        labels: ['Total', 'Low Stock', 'Near Expiry'],
                         datasets: [{
-                            label: 'Sales',
-                            data: <?php echo json_encode($daily_sales); ?>,
-                            backgroundColor: '#3B82F6',
+                            label: 'Chemicals',
+                            data: [<?php echo $total_chemicals; ?>, <?php echo $low_stock_count; ?>, <?php echo $near_expiry_count; ?>],
+                            backgroundColor: ['#3B82F6', '#F59E0B', '#EF4444'],
                             borderRadius: 4
                         }]
                     },
@@ -1609,18 +1549,18 @@ $completion_percentage = 0; // 0% since the job is not completed
                 });
             }
 
-            // Total Job Orders Chart
-            const totalJobsCtx = document.getElementById('totalJobsChart');
-            if (totalJobsCtx) {
-                new Chart(totalJobsCtx, {
+            // Services Chart
+            const servicesCtx = document.getElementById('servicesChart');
+            if (servicesCtx) {
+                new Chart(servicesCtx, {
                     type: 'line',
                     data: {
-                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                        labels: <?php echo json_encode(array_column($service_trends, 'type_of_work')); ?>,
                         datasets: [{
-                            label: 'Job Orders',
-                            data: [5, 8, 12, 15, 10, 18, 20, 25, 30, 22, 28, 35],
-                            borderColor: '#3B82F6',
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            label: 'Service Usage',
+                            data: <?php echo json_encode(array_column($service_trends, 'count')); ?>,
+                            borderColor: '#10B981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
                             tension: 0.4,
                             fill: true
                         }]
@@ -1631,40 +1571,6 @@ $completion_percentage = 0; // 0% since the job is not completed
                         plugins: { legend: { display: false } },
                         scales: { x: { display: false }, y: { display: false } },
                         elements: { point: { radius: 0 } }
-                    }
-                });
-            }
-
-            // Market Share Chart
-            const marketShareCtx = document.getElementById('marketShareChart');
-            if (marketShareCtx) {
-                new Chart(marketShareCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: <?php
-                            $pest_labels = [];
-                            $pest_data = [];
-                            $i = 0;
-                            foreach ($pest_types as $pest) {
-                                if ($i < 5) {
-                                    $pest_labels[] = $pest['pest_problems'];
-                                    $pest_data[] = $pest['count'];
-                                    $i++;
-                                }
-                            }
-                            echo json_encode($pest_labels);
-                        ?>,
-                        datasets: [{
-                            data: <?php echo json_encode($pest_data); ?>,
-                            backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'],
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        cutout: '75%'
                     }
                 });
             }

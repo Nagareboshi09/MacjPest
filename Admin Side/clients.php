@@ -25,6 +25,11 @@ $endingContractsQuery = "SELECT COUNT(*) as total FROM clients WHERE contract_en
 $endingContractsResult = $conn->query($endingContractsQuery);
 $endingContracts = $endingContractsResult->fetch_assoc()['total'];
 
+// Expired contracts
+$expiredContractsQuery = "SELECT COUNT(*) as total FROM clients WHERE contract_end_date IS NOT NULL AND contract_end_date < CURDATE()";
+$expiredContractsResult = $conn->query($expiredContractsQuery);
+$expiredContracts = $expiredContractsResult->fetch_assoc()['total'];
+
 // Fetch all clients with contract information
 $sql = "SELECT
             c.client_id,
@@ -168,6 +173,15 @@ if (!$clients) {
                             <p>Ending Soon (30 days)</p>
                         </div>
                     </div>
+                    <div class="summary-card">
+                        <div class="card-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3><?php echo $expiredContracts; ?></h3>
+                            <p>Expired Contracts</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="clients-header">
@@ -201,24 +215,35 @@ if (!$clients) {
                             </tr>
                         </thead>
                         <tbody>
-                             <?php if ($clients->num_rows > 0): ?>
-                                 <?php while($client = $clients->fetch_assoc()): ?>
-                                     <tr>
-                                         <td><?= htmlspecialchars($client['client_id']) ?></td>
-                                         <td><?= htmlspecialchars($client['first_name'] . ' ' . $client['last_name']) ?></td>
-                                         <td><?= htmlspecialchars($client['email']) ?></td>
-                                         <td><?= htmlspecialchars($client['contact_number']) ?></td>
-                                         <td><?= htmlspecialchars(preg_replace('/\[[-\d\.]+,[-\d\.]+\]$/', '', $client['location_address'] ?? 'Not set')) ?></td>
-                                         <td><?= htmlspecialchars($client['type_of_place'] ?? 'Not set') ?></td>
-                                         <td><?= date('M d, Y', strtotime($client['registered_at'])) ?></td>
-                                         <td>
-                                             <span class="badge <?= $client['has_contract'] ? 'badge-success' : 'badge-secondary' ?>">
-                                                 <?= $client['has_contract'] ? 'Yes' : 'No' ?>
-                                             </span>
-                                         </td>
-                                         <td>
-                                             <?= $client['has_contract'] ? date('M d, Y', strtotime($client['contract_end_date'])) : 'N/A' ?>
-                                         </td>
+                              <?php if ($clients->num_rows > 0): ?>
+                                  <?php while($client = $clients->fetch_assoc()): ?>
+                                      <?php
+                                      $statusClass = '';
+                                      if ($client['contract_end_date']) {
+                                          $endDate = strtotime($client['contract_end_date']);
+                                          if ($endDate < time()) {
+                                              $statusClass = 'expired';
+                                          } elseif ($endDate <= strtotime('+30 days')) {
+                                              $statusClass = 'expiring-soon';
+                                          }
+                                      }
+                                      ?>
+                                      <tr>
+                                          <td><?= htmlspecialchars($client['client_id']) ?></td>
+                                          <td><?= htmlspecialchars($client['first_name'] . ' ' . $client['last_name']) ?></td>
+                                          <td><?= htmlspecialchars($client['email']) ?></td>
+                                          <td><?= htmlspecialchars($client['contact_number']) ?></td>
+                                          <td><?= htmlspecialchars(preg_replace('/\[[-\d\.]+,[-\d\.]+\]$/', '', $client['location_address'] ?? 'Not set')) ?></td>
+                                          <td><?= htmlspecialchars($client['type_of_place'] ?? 'Not set') ?></td>
+                                          <td><?= date('M d, Y', strtotime($client['registered_at'])) ?></td>
+                                          <td>
+                                              <span class="badge <?= $client['has_contract'] ? 'badge-success' : 'badge-secondary' ?>">
+                                                  <?= $client['has_contract'] ? 'Yes' : 'No' ?>
+                                              </span>
+                                          </td>
+                                          <td class="<?= $statusClass ?>">
+                                              <?= $client['has_contract'] ? date('M d, Y', strtotime($client['contract_end_date'])) : 'N/A' ?>
+                                          </td>
                                          <td>
                                              <div class="action-buttons">
                                                  <button class="btn btn-sm btn-warning edit-client-btn" data-id="<?= $client['client_id'] ?>" title="Edit Client">
@@ -601,7 +626,7 @@ if (!$clients) {
 
             // Initialize client search functionality
             $('#clientSearch').on('keyup', function() {
-                const searchValue = $(this).val().toLowerCase();
+                const searchValue = $(this).val().toLowerCase().trim();
                 $('.clients-table tbody tr').each(function() {
                     const clientId = $(this).find('td:nth-child(1)').text().toLowerCase();
                     const clientName = $(this).find('td:nth-child(2)').text().toLowerCase();
@@ -780,8 +805,17 @@ if (!$clients) {
                     processData: false,
                     contentType: false,
                     success: function(response) {
-                        alert('Client added successfully!');
-                        location.reload();
+                        const result = JSON.parse(response);
+                        if (result.success) {
+                            alert('Client added successfully!');
+                            location.reload();
+                        } else {
+                            if (result.errors) {
+                                alert('Error adding client:\n' + result.errors.join('\n'));
+                            } else {
+                                alert('Error adding client: ' + (result.error || 'Unknown error'));
+                            }
+                        }
                     },
                     error: function() {
                         alert('Error adding client.');
@@ -799,8 +833,17 @@ if (!$clients) {
                     processData: false,
                     contentType: false,
                     success: function(response) {
-                        alert('Client updated successfully!');
-                        location.reload();
+                        const result = JSON.parse(response);
+                        if (result.success) {
+                            alert('Client updated successfully!');
+                            location.reload();
+                        } else {
+                            if (result.errors) {
+                                alert('Error updating client:\n' + result.errors.join('\n'));
+                            } else {
+                                alert('Error updating client: ' + (result.error || 'Unknown error'));
+                            }
+                        }
                     },
                     error: function() {
                         alert('Error updating client.');

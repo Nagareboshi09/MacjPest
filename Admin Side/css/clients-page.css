@@ -155,6 +155,20 @@
     min-width: 24px;
 }
 
+/* Expiring Soon Styles */
+.expiring-soon {
+    background-color: #fff3cd !important;
+    color: #856404 !important;
+    font-weight: 600;
+}
+
+/* Expired Contract Styles */
+.expired {
+    background-color: #f8d7da !important;
+    color: #721c24 !important;
+    font-weight: 600;
+}
+
 .badge-primary {
     background-color: var(--primary-color);
     color: white;
@@ -163,6 +177,11 @@
 .badge-secondary {
     background-color: #e9ecef;
     color: var(--text-color);
+}
+
+.badge-success {
+    background-color: #28a745;
+    color: white;
 }
 
 /* Action Buttons */
@@ -821,6 +840,10 @@
     border-left-color: #ffc107;
 }
 
+.summary-card:nth-child(4) {
+    border-left-color: #dc3545;
+}
+
 .card-icon {
     width: 60px;
     height: 60px;
@@ -843,6 +866,10 @@
 
 .summary-card:nth-child(3) .card-icon {
     background: linear-gradient(135deg, #ffc107, #fd7e14);
+}
+
+.summary-card:nth-child(4) .card-icon {
+    background: linear-gradient(135deg, #dc3545, #c82333);
 }
 
 .card-content h3 {
