@@ -103,7 +103,6 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Services Management - MacJ Pest Control</title>
     <link rel="stylesheet" href="css/admin-base.css">
-    <link rel="stylesheet" href="css/tools-equipment-page.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/notifications.css">
     <link rel="stylesheet" href="css/notification-viewed.css">
@@ -366,7 +365,6 @@ try {
                 <ul>
                     <li><a href="dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a></li>
                     <li><a href="profile.php"><i class="fas fa-user-circle"></i> My Profile</a></li>
-                    <li><a href="assessment_report.php"><i class="fas fa-clipboard-check"></i> Assessment Report</a></li>
                     <li><a href="chemical_inventory.php"><i class="fas fa-flask"></i> Chemical Inventory</a></li>
                     <li class="active"><a href="services.php"><i class="fas fa-concierge-bell"></i> Services</a></li>
                     <li><a href="technicians.php"><i class="fas fa-user-md"></i> Technicians</a></li>

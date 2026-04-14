@@ -1108,7 +1108,6 @@ $completion_percentage = 0; // 0% since the job is not completed
                 <ul>
                     <li class="active"><a href="dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a></li>
                     <li><a href="profile.php"><i class="fas fa-user-circle"></i> My Profile</a></li>
-                    <li><a href="assessment_report.php"><i class="fas fa-clipboard-check"></i> Assessment Report</a></li>
                     <li><a href="chemical_inventory.php"><i class="fas fa-flask"></i> Chemical Inventory</a></li>
                     <li><a href="services.php"><i class="fas fa-concierge-bell"></i> Services</a></li>
                     <li><a href="technicians.php"><i class="fas fa-user-md"></i> Technicians</a></li>
