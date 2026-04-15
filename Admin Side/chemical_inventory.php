@@ -127,14 +127,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':safety' => $_POST['safety_info'] ?? null,
             ':exp_date' => $_POST['expiration_date'],
             ':dilution_rate' => isset($_POST['dilution_rate']) ? (float)$_POST['dilution_rate'] : null,
-            ':area_coverage' => isset($_POST['area_coverage']) ? (float)$_POST['area_coverage'] : 100
+            ':area_coverage' => isset($_POST['area_coverage']) ? (float)$_POST['area_coverage'] : 100,
+            ':manual_area' => isset($_POST['manual_area']) ? (float)$_POST['manual_area'] : null,
+            ':manual_solution_rate' => isset($_POST['manual_solution_rate']) ? (float)$_POST['manual_solution_rate'] : null,
+            ':manual_dilution_ratio' => $_POST['manual_dilution_ratio'] ?? null
         ];
 
         $sql = "INSERT INTO chemical_inventory
                 (chemical_name, type, target_pest, quantity, unit, manufacturer,
-                 supplier, description, safety_info, expiration_date, dilution_rate, area_coverage)
+                 supplier, description, safety_info, expiration_date, dilution_rate, area_coverage,
+                 manual_area, manual_solution_rate, manual_dilution_ratio)
                 VALUES (:name, :type, :target_pest, :qty, :unit, :manufacturer,
-                        :supplier, :desc, :safety, :exp_date, :dilution_rate, :area_coverage)";
+                        :supplier, :desc, :safety, :exp_date, :dilution_rate, :area_coverage,
+                        :manual_area, :manual_solution_rate, :manual_dilution_ratio)";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute($data);
@@ -748,76 +753,75 @@ try {
 
                             <div class="detail-section">
                                 <h3><i class="fas fa-calculator"></i> Dilution Calculator</h3>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="dilution_rate"><i class="fas fa-tint"></i> Dilution Rate (ml per liter)</label>
-                                            <input type="number" step="0.1" min="0" class="form-control"
-                                                name="dilution_rate" id="dilution_rate" placeholder="e.g., 20 ml per liter">
-                                            <small class="form-text text-muted">Amount of chemical per liter of water</small>
-                                        </div>
-                                    </div>
-                                     <div class="col-md-6">
-                                         <div class="form-group">
-                                             <label for="area_coverage"><i class="fas fa-expand"></i> Area Coverage (m² per liter)</label>
-                                             <input type="number" step="0.1" min="0" class="form-control"
-                                                 name="area_coverage" id="area_coverage" value="100" placeholder="e.g., 100 m² per liter">
-                                             <small class="form-text text-muted">Area covered by 1 liter of diluted solution</small>
+                                <!-- Manual Input Dilution Calculator -->
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <div class="card">
+                                            <div class="card-header bg-primary text-white">
+                                                <h5><i class="fas fa-calculator"></i> Manual Input Dilution Calculator</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <div class="form-group">
+                                                            <label for="manual_area"><i class="fas fa-ruler-combined"></i> Area in sq. m:</label>
+                                                            <input type="number" step="0.01" min="0" class="form-control"
+                                                                id="manual_area" placeholder="e.g., 100">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="form-group">
+                                                            <label for="manual_solution_rate"><i class="fas fa-tint"></i> Solution rate per sq. m:</label>
+                                                            <input type="number" step="0.01" min="0" class="form-control"
+                                                                id="manual_solution_rate" placeholder="e.g., 5">
+                                                            <small class="form-text text-muted">Liters of solution needed per square meter</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="form-group">
+                                                            <label for="manual_dilution_ratio"><i class="fas fa-balance-scale"></i> Dilution ratio:</label>
+                                                            <input type="text" class="form-control"
+                                                                id="manual_dilution_ratio" placeholder="e.g., 1:100">
+                                                            <small class="form-text text-muted">Format: chemical:water (e.g., 1:100)</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <div class="col-12">
+                                                        <button class="btn btn-primary" id="calculate_manual_dilution">
+                                                            <i class="fas fa-calculator"></i> Calculate
+                                                        </button>
+                                                        <button class="btn btn-secondary" id="clear_manual_dilution">
+                                                            <i class="fas fa-eraser"></i> Clear
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <div class="col-12">
+                                                        <div id="manual_dilution_result" class="card bg-light" style="display: none;">
+                                                            <div class="card-body">
+                                                                <h6><i class="fas fa-check-circle"></i> Calculation Results:</h6>
+                                                                <div id="manual_dilution_output"></div>
+                                                 </div>
+                                             </div>
                                          </div>
                                      </div>
                                  </div>
-                                 <div class="row mt-3">
-                                     <div class="col-md-6">
-                                         <div class="form-group">
-                                             <label for="manual_total_solution"><i class="fas fa-calculator"></i> Manual Total Solution (liters for 200 m²)</label>
-                                             <input type="number" step="0.01" min="0" class="form-control"
-                                                 name="manual_total_solution" id="manual_total_solution" placeholder="e.g., 2.0">
-                                             <small class="form-text text-muted">Enter total solution needed manually (overrides automatic calculation)</small>
-                                         </div>
+                                 <input type="hidden" name="dilution_rate" id="edit_hidden_dilution_rate">
+                                 <input type="hidden" name="area_coverage" id="edit_hidden_area_coverage">
+                                 <input type="hidden" name="manual_area" id="edit_hidden_manual_area">
+                                 <input type="hidden" name="manual_solution_rate" id="edit_hidden_manual_solution_rate">
+                                 <input type="hidden" name="manual_dilution_ratio" id="edit_hidden_manual_dilution_ratio">
+                             </div>
                                      </div>
-                                     <div class="col-md-6">
-                                         <div class="form-group">
-                                             <label for="manual_total_chemical"><i class="fas fa-flask"></i> Manual Total Chemical (ml for 200 m²)</label>
-                                             <input type="number" step="0.01" min="0" class="form-control"
-                                                 name="manual_total_chemical" id="manual_total_chemical" placeholder="e.g., 40.0">
-                                             <small class="form-text text-muted">Enter total chemical needed manually (overrides automatic calculation)</small>
-                                         </div>
-                                     </div>
-                                </div>
-                                <div class="row mt-3">
-                                    <div class="col-12">
-                                        <div class="card bg-light">
-                                            <div class="card-header">
-                                                <h5><i class="fas fa-info-circle"></i> Dilution Calculator Preview</h5>
-                                            </div>
-                                            <div class="card-body">
-                                                <div class="dilution-preview">
-                                                    <p><strong>Recommended Chemical:</strong> <span id="preview_chemical_name">Chemical Name</span></p>
-                                                    <p><strong>Calculation:</strong></p>
-                                                    <ol>
-                                                        <li><strong>Dilution Rate:</strong> <span id="preview_dilution_rate">20</span> ml per 1 liter of water</li>
-                                                        <li><strong>Coverage:</strong> 1 liter of diluted solution covers <span id="preview_area_coverage">100</span> m²</li>
-                                                        <li><strong>Total Spray Solution Needed for 200 m²:</strong>
-                                                            <div class="formula-display">
-                                                                <span class="fraction">
-                                                                    <span class="numerator">1 L</span>
-                                                                    <span class="denominator"><span id="preview_area_denominator">100</span> m²</span>
-                                                                </span>
-                                                                × 200 m² = <span id="preview_total_solution">2</span> liters
-                                                            </div>
-                                                        </li>
-                                                        <li><strong>Total Chemical Required:</strong>
-                                                            <div class="formula-display">
-                                                                <span id="preview_dilution_rate2">20</span> mL/L × <span id="preview_total_solution2">2</span> L = <span id="preview_total_chemical">40</span> mL
-                                                            </div>
-                                                        </li>
-                                                    </ol>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                                 </div>
+                                 <input type="hidden" name="dilution_rate" id="hidden_dilution_rate">
+                                 <input type="hidden" name="area_coverage" id="hidden_area_coverage">
+                                 <input type="hidden" name="manual_area" id="hidden_manual_area">
+                                 <input type="hidden" name="manual_solution_rate" id="hidden_manual_solution_rate">
+                                 <input type="hidden" name="manual_dilution_ratio" id="hidden_manual_dilution_ratio">
+
+                             </div>
 
                             <div class="detail-section">
                                 <h3><i class="fas fa-file-alt"></i> Additional Details</h3>
@@ -898,31 +902,35 @@ try {
                             </div>
                         </div>
 
-                        <div class="detail-section">
-                            <h3><i class="fas fa-calculator"></i> Dilution Information</h3>
-                            <div class="detail-grid">
-                                <div class="detail-item">
-                                    <div class="detail-label"><i class="fas fa-tint"></i> Dilution Rate</div>
-                                    <div class="detail-value" id="viewDilutionRate">Not specified</div>
-                                </div>
-                                <div class="detail-item">
-                                    <div class="detail-label"><i class="fas fa-expand"></i> Area Coverage</div>
-                                    <div class="detail-value" id="viewAreaCoverage">Not specified</div>
-                                </div>
-                                <div class="detail-item">
-                                    <div class="detail-label"><i class="fas fa-calculator"></i> Calculation Example</div>
-                                    <div class="detail-value" id="viewDilutionExample">
-                                        <div class="dilution-preview">
-                                            <p><strong>For 200 m² area:</strong></p>
-                                            <ol>
-                                                <li>Total solution needed: <span id="viewTotalSolution">2</span> liters</li>
-                                                <li>Total chemical required: <span id="viewTotalChemical">40</span> ml</li>
-                                            </ol>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                         <div class="detail-section">
+                             <h3><i class="fas fa-calculator"></i> Dilution Information</h3>
+                             <div class="detail-grid">
+                                 <div class="detail-item">
+                                     <div class="detail-label"><i class="fas fa-ruler-combined"></i> Area</div>
+                                     <div class="detail-value" id="viewArea">Not specified</div>
+                                 </div>
+                                 <div class="detail-item">
+                                     <div class="detail-label"><i class="fas fa-tint"></i> Solution Rate per sq. m</div>
+                                     <div class="detail-value" id="viewSolutionRate">Not specified</div>
+                                 </div>
+                                 <div class="detail-item">
+                                     <div class="detail-label"><i class="fas fa-balance-scale"></i> Dilution Ratio</div>
+                                     <div class="detail-value" id="viewDilutionRatio">Not specified</div>
+                                 </div>
+                                 <div class="detail-item">
+                                     <div class="detail-label"><i class="fas fa-calculator"></i> Calculation Example</div>
+                                     <div class="detail-value" id="viewDilutionExample">
+                                         <div class="dilution-preview">
+                                             <p><strong>For 200 m² area:</strong></p>
+                                             <ol>
+                                                 <li>Total solution needed: <span id="viewTotalSolution">2</span> liters</li>
+                                                 <li>Total chemical required: <span id="viewTotalChemical">40</span> ml</li>
+                                             </ol>
+                                         </div>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
 
                         <div class="detail-section">
                             <h3><i class="fas fa-file-alt"></i> Additional Details</h3>
@@ -1039,70 +1047,58 @@ try {
 
                             <div class="detail-section">
                                 <h3><i class="fas fa-calculator"></i> Dilution Calculator</h3>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="editDilutionRate"><i class="fas fa-tint"></i> Dilution Rate (ml per liter)</label>
-                                            <input type="number" step="0.1" min="0" class="form-control"
-                                                name="dilution_rate" id="editDilutionRate" placeholder="e.g., 20 ml per liter">
-                                            <small class="form-text text-muted">Amount of chemical per liter of water</small>
-                                        </div>
-                                    </div>
-                                     <div class="col-md-6">
-                                         <div class="form-group">
-                                             <label for="editAreaCoverage"><i class="fas fa-expand"></i> Area Coverage (m² per liter)</label>
-                                             <input type="number" step="0.1" min="0" class="form-control"
-                                                 name="area_coverage" id="editAreaCoverage" placeholder="e.g., 100 m² per liter">
-                                             <small class="form-text text-muted">Area covered by 1 liter of diluted solution</small>
-                                         </div>
-                                     </div>
-                                 </div>
-                                 <div class="row mt-3">
-                                     <div class="col-md-6">
-                                         <div class="form-group">
-                                             <label for="editManualTotalSolution"><i class="fas fa-calculator"></i> Manual Total Solution (liters for 200 m²)</label>
-                                             <input type="number" step="0.01" min="0" class="form-control"
-                                                 name="manual_total_solution" id="editManualTotalSolution" placeholder="e.g., 2.0">
-                                             <small class="form-text text-muted">Enter total solution needed manually (overrides automatic calculation)</small>
-                                         </div>
-                                     </div>
-                                     <div class="col-md-6">
-                                         <div class="form-group">
-                                             <label for="editManualTotalChemical"><i class="fas fa-flask"></i> Manual Total Chemical (ml for 200 m²)</label>
-                                             <input type="number" step="0.01" min="0" class="form-control"
-                                                 name="manual_total_chemical" id="editManualTotalChemical" placeholder="e.g., 40.0">
-                                             <small class="form-text text-muted">Enter total chemical needed manually (overrides automatic calculation)</small>
-                                         </div>
-                                     </div>
-                                 </div>
-                                <div class="row mt-3">
+                                <!-- Manual Input Dilution Calculator -->
+                                <div class="row mt-4">
                                     <div class="col-12">
-                                        <div class="card bg-light">
-                                            <div class="card-header">
-                                                <h5><i class="fas fa-info-circle"></i> Dilution Calculator Preview</h5>
+                                        <div class="card">
+                                            <div class="card-header bg-primary text-white">
+                                                <h5><i class="fas fa-calculator"></i> Manual Input Dilution Calculator</h5>
                                             </div>
                                             <div class="card-body">
-                                                <div class="dilution-preview">
-                                                    <p><strong>Recommended Chemical:</strong> <span id="edit_preview_chemical_name">Chemical Name</span></p>
-                                                    <p><strong>Calculation:</strong></p>
-                                                    <ol>
-                                                        <li><strong>Dilution Rate:</strong> <span id="edit_preview_dilution_rate">20</span> ml per 1 liter of water</li>
-                                                        <li><strong>Coverage:</strong> 1 liter of diluted solution covers <span id="edit_preview_area_coverage">100</span> m²</li>
-                                                        <li><strong>Total Spray Solution Needed for 200 m²:</strong>
-                                                            <div class="formula-display">
-                                                                <span class="fraction">
-                                                                    <span class="numerator">1 L</span>
-                                                                    <span class="denominator"><span id="edit_preview_area_denominator">100</span> m²</span>
-                                                                </span>
-                                                                × 200 m² = <span id="edit_preview_total_solution">2</span> liters
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <div class="form-group">
+                                                            <label for="edit_manual_area"><i class="fas fa-ruler-combined"></i> Area in sq. m:</label>
+                                                            <input type="number" step="0.01" min="0" class="form-control"
+                                                                id="edit_manual_area" placeholder="e.g., 100">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="form-group">
+                                                            <label for="edit_manual_solution_rate"><i class="fas fa-tint"></i> Solution rate per sq. m:</label>
+                                                            <input type="number" step="0.01" min="0" class="form-control"
+                                                                id="edit_manual_solution_rate" placeholder="e.g., 5">
+                                                            <small class="form-text text-muted">Liters of solution needed per square meter</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="form-group">
+                                                            <label for="edit_manual_dilution_ratio"><i class="fas fa-balance-scale"></i> Dilution ratio:</label>
+                                                            <input type="text" class="form-control"
+                                                                id="edit_manual_dilution_ratio" placeholder="e.g., 1:100">
+                                                            <small class="form-text text-muted">Format: chemical:water (e.g., 1:100)</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                     <div class="col-12">
+                                                         <button type="button" class="btn btn-primary" id="calculate_edit_manual_dilution">
+                                                             <i class="fas fa-calculator"></i> Calculate
+                                                         </button>
+                                                         <button type="button" class="btn btn-secondary" id="clear_edit_manual_dilution">
+                                                             <i class="fas fa-eraser"></i> Clear
+                                                         </button>
+                                                     </div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <div class="col-12">
+                                                        <div id="edit_manual_dilution_result" class="card bg-light" style="display: none;">
+                                                            <div class="card-body">
+                                                                <h6><i class="fas fa-check-circle"></i> Calculation Results:</h6>
+                                                                <div id="edit_manual_dilution_output"></div>
                                                             </div>
-                                                        </li>
-                                                        <li><strong>Total Chemical Required:</strong>
-                                                            <div class="formula-display">
-                                                                <span id="edit_preview_dilution_rate2">20</span> mL/L × <span id="edit_preview_total_solution2">2</span> L = <span id="edit_preview_total_chemical">40</span> mL
-                                                            </div>
-                                                        </li>
-                                                    </ol>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1146,93 +1142,251 @@ try {
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
     <script>
-    // Dilution Calculator Functions
-    function updateDilutionCalculator(isEdit = false) {
-        // Get values from inputs based on whether we're in edit mode or not
-        const prefix = isEdit ? 'edit' : '';
-        const chemicalNameSelector = isEdit ? '#editChemicalName' : 'input[name="chemical_name"]';
-        const dilutionRateSelector = isEdit ? '#editDilutionRate' : '#dilution_rate';
-        const areaCoverageSelector = isEdit ? '#editAreaCoverage' : '#area_coverage';
+    // Manual Dilution Calculator Function
+    function calculateManualDilution() {
+        const area = parseFloat($('#manual_area').val());
+        const solutionRate = parseFloat($('#manual_solution_rate').val());
+        const ratioStr = $('#manual_dilution_ratio').val().trim();
 
-        const chemicalName = $(chemicalNameSelector).val() || 'Chemical Name';
-        const dilutionRate = parseFloat($(dilutionRateSelector).val()) || 20;
-        const areaCoverage = parseFloat($(areaCoverageSelector).val()) || 100;
-        const targetArea = 200; // Fixed at 200 m² for the example
+        // Validate inputs
+        if (isNaN(area) || area <= 0) {
+            alert('Please enter a valid area in square meters.');
+            return;
+        }
+        if (isNaN(solutionRate) || solutionRate <= 0) {
+            alert('Please enter a valid solution rate per square meter.');
+            return;
+        }
+        if (!ratioStr || !ratioStr.includes(':')) {
+            alert('Please enter a valid dilution ratio (e.g., 1:100).');
+            return;
+        }
+
+        // Parse dilution ratio (chemical:water)
+        const ratioParts = ratioStr.split(':');
+        if (ratioParts.length !== 2) {
+            alert('Invalid dilution ratio format. Please use format like 1:100.');
+            return;
+        }
+
+        const chemicalPart = parseFloat(ratioParts[0]);
+        const waterPart = parseFloat(ratioParts[1]);
+
+        if (isNaN(chemicalPart) || isNaN(waterPart) || chemicalPart <= 0 || waterPart <= 0) {
+            alert('Please enter valid numbers in the dilution ratio.');
+            return;
+        }
 
         // Calculate total solution needed
-        const totalSolution = (targetArea / areaCoverage).toFixed(2);
+        const totalSolution = area * solutionRate;
 
-        // Calculate total chemical needed
-        const totalChemical = (dilutionRate * totalSolution).toFixed(2);
+        // Calculate chemical needed
+        // Dilution ratio 1:100 means 1 part chemical per 100 parts of total solution
+        // Chemical needed = (chemicalPart / waterPart) × Total solution
+        const chemicalNeeded = (chemicalPart / waterPart) * totalSolution;
 
-        // Update preview elements
-        const previewPrefix = isEdit ? '#edit_preview_' : '#preview_';
-        $(previewPrefix + 'chemical_name').text(chemicalName);
-        $(previewPrefix + 'dilution_rate').text(dilutionRate);
-        $(previewPrefix + 'dilution_rate2').text(dilutionRate);
-        $(previewPrefix + 'area_coverage').text(areaCoverage);
-        $(previewPrefix + 'area_denominator').text(areaCoverage);
-        $(previewPrefix + 'total_solution').text(totalSolution);
-        $(previewPrefix + 'total_solution2').text(totalSolution);
-        $(previewPrefix + 'total_chemical').text(totalChemical);
+        // Calculate water needed
+        const waterNeeded = totalSolution - chemicalNeeded;
+
+        // Display results
+        const output = `
+            <div class="dilution-preview">
+                <p><strong>For a ${area} sq. m area:</strong></p>
+                <ul>
+                    <li><strong>Total solution needed:</strong> ${totalSolution.toFixed(2)} liters</li>
+                    <li><strong>Chemical needed:</strong> ${chemicalNeeded.toFixed(2)} liters</li>
+                    <li><strong>Water needed:</strong> ${waterNeeded.toFixed(2)} liters</li>
+                </ul>
+                <p><strong>Explanation:</strong></p>
+                <p>
+                    With a dilution ratio of ${ratioStr}, for every ${waterPart} parts of total solution, 
+                    ${chemicalPart} part(s) is chemical.
+                    <br><br>
+                    Calculation:
+                    <br>
+                    • Total solution = Area × Solution rate = ${area} × ${solutionRate} = ${totalSolution.toFixed(2)} liters
+                    <br>
+                    • Chemical = (Chemical part / Solution part) × Total solution = (${chemicalPart} / ${waterPart}) × ${totalSolution.toFixed(2)} = ${chemicalNeeded.toFixed(2)} liters
+                    <br>
+                    • Water = Total solution - Chemical = ${totalSolution.toFixed(2)} - ${chemicalNeeded.toFixed(2)} = ${waterNeeded.toFixed(2)} liters
+                </p>
+            </div>
+        `;
+
+        $('#manual_dilution_output').html(output);
+        $('#manual_dilution_result').show();
+
+        // Set hidden fields for saving
+        const dilutionRate = (chemicalNeeded / totalSolution) * 1000;
+        const areaCoverage = area / totalSolution;
+        $('#hidden_dilution_rate').val(dilutionRate.toFixed(2));
+        $('#hidden_area_coverage').val(areaCoverage.toFixed(2));
+        $('#hidden_manual_area').val(area);
+        $('#hidden_manual_solution_rate').val(solutionRate);
+        $('#hidden_manual_dilution_ratio').val(ratioStr);
+    }
+
+    // Clear manual dilution calculator
+    function clearManualDilution() {
+        $('#manual_area').val('');
+        $('#manual_solution_rate').val('');
+        $('#manual_dilution_ratio').val('');
+        $('#manual_dilution_result').hide();
+        $('#manual_dilution_output').html('');
+        $('#hidden_dilution_rate').val('');
+        $('#hidden_area_coverage').val('');
+    }
+
+        // Edit Modal Manual Dilution Calculator Function
+    function calculateEditManualDilution() {
+        const area = parseFloat($('#edit_manual_area').val());
+        const solutionRate = parseFloat($('#edit_manual_solution_rate').val());
+        const ratioStr = $('#edit_manual_dilution_ratio').val().trim();
+
+        // Hide results initially in case validation fails
+        $('#edit_manual_dilution_result').hide();
+
+        // Validate inputs
+        if (isNaN(area) || area <= 0) {
+            alert('Please enter a valid area in square meters.');
+            return;
+        }
+        if (isNaN(solutionRate) || solutionRate <= 0) {
+            alert('Please enter a valid solution rate per square meter.');
+            return;
+        }
+        if (!ratioStr || !ratioStr.includes(':')) {
+            alert('Please enter a valid dilution ratio (e.g., 1:100).');
+            return;
+        }
+
+        // Parse dilution ratio (chemical:water)
+        const ratioParts = ratioStr.split(':');
+        if (ratioParts.length !== 2) {
+            alert('Invalid dilution ratio format. Please use format like 1:100.');
+            return;
+        }
+
+        const chemicalPart = parseFloat(ratioParts[0]);
+        const waterPart = parseFloat(ratioParts[1]);
+
+        if (isNaN(chemicalPart) || isNaN(waterPart) || chemicalPart <= 0 || waterPart <= 0) {
+            alert('Please enter valid numbers in the dilution ratio.');
+            return;
+        }
+
+        // Calculate total solution needed
+        const totalSolution = area * solutionRate;
+
+        // Calculate chemical needed
+        // Dilution ratio 1:100 means 1 part chemical per 100 parts of total solution
+        // Chemical needed = (chemicalPart / waterPart) × Total solution
+        const chemicalNeeded = (chemicalPart / waterPart) * totalSolution;
+
+        // Calculate water needed
+        const waterNeeded = totalSolution - chemicalNeeded;
+
+        // Display results
+        const output = `
+            <div class="dilution-preview">
+                <p><strong>For a ${area} sq. m area:</strong></p>
+                <ul>
+                    <li><strong>Total solution needed:</strong> ${totalSolution.toFixed(2)} liters</li>
+                    <li><strong>Chemical needed:</strong> ${chemicalNeeded.toFixed(2)} liters</li>
+                    <li><strong>Water needed:</strong> ${waterNeeded.toFixed(2)} liters</li>
+                </ul>
+                <p><strong>Explanation:</strong></p>
+                <p>
+                    With a dilution ratio of ${ratioStr}, for every ${waterPart} parts of total solution, 
+                    ${chemicalPart} part(s) is chemical.
+                    <br><br>
+                    Calculation:
+                    <br>
+                    • Total solution = Area × Solution rate = ${area} × ${solutionRate} = ${totalSolution.toFixed(2)} liters
+                    <br>
+                    • Chemical = (Chemical part / Solution part) × Total solution = (${chemicalPart} / ${waterPart}) × ${totalSolution.toFixed(2)} = ${chemicalNeeded.toFixed(2)} liters
+                    <br>
+                    • Water = Total solution - Chemical = ${totalSolution.toFixed(2)} - ${chemicalNeeded.toFixed(2)} = ${waterNeeded.toFixed(2)} liters
+                </p>
+            </div>
+        `;
+
+        $('#edit_manual_dilution_output').html(output);
+        $('#edit_manual_dilution_result').show();
+
+        // Set hidden fields for saving
+        const dilutionRate = (chemicalNeeded / totalSolution) * 1000;
+        const areaCoverage = area / totalSolution;
+        $('#edit_hidden_dilution_rate').val(dilutionRate.toFixed(2));
+        $('#edit_hidden_area_coverage').val(areaCoverage.toFixed(2));
+        $('#edit_hidden_manual_area').val(area);
+        $('#edit_hidden_manual_solution_rate').val(solutionRate);
+        $('#edit_hidden_manual_dilution_ratio').val(ratioStr);
+
+        // Mark that calculation was performed
+        $('#editChemicalForm').data('calculation-performed', true);
+    }
+
+    // Clear edit modal manual dilution calculator
+    function clearEditManualDilution() {
+        $('#edit_manual_area').val('');
+        $('#edit_manual_solution_rate').val('');
+        $('#edit_manual_dilution_ratio').val('');
+        $('#edit_manual_dilution_result').hide();
+        $('#edit_manual_dilution_output').html('');
+        $('#edit_hidden_dilution_rate').val('');
+        $('#edit_hidden_area_coverage').val('');
+
+        // Reset calculation flag
+        $('#editChemicalForm').data('calculation-performed', false);
     }
 
     $(document).ready(function() {
-        // Initialize dilution calculator
-        updateDilutionCalculator();
-
-        // Update calculator when inputs change
-        $('#dilution_rate, #area_coverage, input[name="chemical_name"]').on('input', function() {
-            updateDilutionCalculator();
-        });
-
         // Set default values for common chemicals
         $('#target_pest').on('change', function() {
             const pestType = $(this).val();
             const chemicalType = $('select[name="type"]').val();
 
-            // Default values
-            let dilutionRate = 20;
-            let areaCoverage = 100;
-
-            // Adjust based on pest type and chemical type
+            // Show helpful hint based on selection
+            let hint = '';
             if (pestType === 'Termites') {
-                dilutionRate = 12;
-                areaCoverage = 100;
+                hint = 'Common dilution ratio for termites: 1:100';
             } else if (pestType === 'Cockroaches' || pestType === 'Ants' || pestType === 'Bed Bugs') {
-                dilutionRate = 20;
-                areaCoverage = 100;
+                hint = 'Common dilution ratio: 1:100';
             } else if (pestType === 'Mosquitoes' || pestType === 'Flies') {
-                dilutionRate = 20;
-                areaCoverage = 100;
+                hint = 'Common dilution ratio: 1:100';
             } else if (pestType === 'Grass Problems' || pestType === 'Weeds') {
-                dilutionRate = 30;
-                areaCoverage = 100;
+                hint = 'Common dilution ratio for herbicides: 1:50';
             }
 
-            // Adjust based on chemical type
-            if (chemicalType === 'Herbicide') {
-                dilutionRate = 30;
-            } else if (chemicalType === 'Rodenticide') {
-                // Rodenticides typically don't use dilution
-                dilutionRate = 0;
-            } else if (chemicalType === 'Disinfection') {
-                dilutionRate = 50;
-            }
-
-            // Set the values
-            $('#dilution_rate').val(dilutionRate);
-            $('#area_coverage').val(areaCoverage);
-
-            // Update the calculator
-            updateDilutionCalculator();
+            // You can display this hint if needed
+            console.log(hint);
         });
 
         // Also update when chemical type changes
         $('select[name="type"]').on('change', function() {
-            // Trigger the target pest change handler to recalculate
+            // Trigger the target pest change handler
             $('#target_pest').trigger('change');
         });
+
+        // Manual Dilution Calculator event handlers
+        $('#calculate_manual_dilution').on('click', function() {
+            calculateManualDilution();
+        });
+
+        $('#clear_manual_dilution').on('click', function() {
+            clearManualDilution();
+        });
+
+        // Edit Modal Manual Dilution Calculator event handlers
+        $('#calculate_edit_manual_dilution').on('click', function() {
+            calculateEditManualDilution();
+        });
+
+        $('#clear_edit_manual_dilution').on('click', function() {
+            clearEditManualDilution();
+        });
+
         // Create new chemical
         $('#chemicalForm').submit(function(e) {
             e.preventDefault();
@@ -1299,73 +1453,81 @@ try {
                             }
                         });
 
-                        // Set dilution rate and area coverage
-                        $('#editDilutionRate').val(response.data.dilution_rate || 20);
-                        $('#editAreaCoverage').val(response.data.area_coverage || 100);
-
                         $('#editManufacturer').val(response.data.manufacturer);
                         $('#editSupplier').val(response.data.supplier);
                         $('#editExpirationDate').val(response.data.expiration_date);
                         $('#editDescription').val(response.data.description);
                         $('#editSafetyInfo').val(response.data.safety_info);
 
-                        // Update the dilution calculator preview
-                        updateDilutionCalculator(true);
+                        // Display dilution calculation results in edit modal
+                        const dilutionRate = response.data.dilution_rate || 20;
+                        const areaCoverage = response.data.area_coverage || 100;
+
+                        let area;
+                        if (response.data.manual_area) {
+                            area = response.data.manual_area;
+                        } else {
+                            area = 100;
+                        }
+
+                        // Populate the manual calculator inputs with values that produce the stored calculation
+                        $('#edit_manual_area').val(area);
+                        $('#edit_manual_solution_rate').val((1 / areaCoverage).toFixed(4));
+                        $('#edit_manual_dilution_ratio').val(dilutionRate + ':' + (1000 - dilutionRate));
+
+                        // Calculate example values
+                        const targetArea = area;
+                        const totalSolution = (targetArea / areaCoverage).toFixed(2);
+                        const totalChemical = (dilutionRate * totalSolution).toFixed(2);
+                        const waterNeeded = (totalSolution - totalChemical / 1000).toFixed(2);
+
+                        const output = `
+                            <div class="dilution-preview">
+                                <p><strong>For a ${targetArea} sq. m area:</strong></p>
+                                <ul>
+                                    <li><strong>Total solution needed:</strong> ${totalSolution} liters</li>
+                                    <li><strong>Chemical needed:</strong> ${totalChemical} ml</li>
+                                    <li><strong>Water needed:</strong> ${waterNeeded} liters</li>
+                                </ul>
+                                <p><strong>Explanation:</strong></p>
+                                <p>
+                                    With a dilution rate of ${dilutionRate} ml per liter and area coverage of ${areaCoverage} m² per liter:
+                                    <br><br>
+                                    Calculation:
+                                    <br>
+                                    • Total solution = Area ÷ Area coverage = ${targetArea} ÷ ${areaCoverage} = ${totalSolution} liters
+                                    <br>
+                                    • Chemical = Dilution rate × Total solution = ${dilutionRate} × ${totalSolution} = ${totalChemical} ml
+                                    <br>
+                                    • Water = Total solution - Chemical = ${totalSolution} - ${totalChemical / 1000} = ${waterNeeded} liters
+                                </p>
+                            </div>
+                        `;
+
+                        $('#edit_manual_dilution_output').html(output);
+
+                        // Set hidden fields
+                        $('#edit_hidden_dilution_rate').val(dilutionRate);
+                        $('#edit_hidden_area_coverage').val(areaCoverage);
+
+                        if (response.data.manual_area) {
+                            $('#edit_manual_area').val(response.data.manual_area);
+                            $('#edit_manual_solution_rate').val(response.data.manual_solution_rate);
+                            $('#edit_manual_dilution_ratio').val(response.data.manual_dilution_ratio);
+                            $('#edit_hidden_manual_area').val(response.data.manual_area);
+                            $('#edit_hidden_manual_solution_rate').val(response.data.manual_solution_rate);
+                            $('#edit_hidden_manual_dilution_ratio').val(response.data.manual_dilution_ratio);
+                        } else {
+                            // populate with reverse calculated
+                            $('#edit_manual_area').val(targetArea);
+                            $('#edit_manual_solution_rate').val((1 / areaCoverage).toFixed(4));
+                            $('#edit_manual_dilution_ratio').val(dilutionRate + ':' + (1000 - dilutionRate));
+                            $('#edit_hidden_manual_area').val(targetArea);
+                            $('#edit_hidden_manual_solution_rate').val((1 / areaCoverage).toFixed(4));
+                            $('#edit_hidden_manual_dilution_ratio').val(dilutionRate + ':' + (1000 - dilutionRate));
+                        }
 
                         $('#editChemicalModal').modal('show');
-
-                        // Set up event handlers for the edit form
-                        $('#editDilutionRate, #editAreaCoverage, #editChemicalName').off('input').on('input', function() {
-                            updateDilutionCalculator(true);
-                        });
-
-                        // Set default values when pest type changes in edit mode
-                        $('#editTargetPest').off('change').on('change', function() {
-                            const pestType = $(this).val();
-                            const chemicalType = $('#editType').val();
-
-                            // Default values
-                            let dilutionRate = 20;
-                            let areaCoverage = 100;
-
-                            // Adjust based on pest type and chemical type
-                            if (pestType === 'Termites') {
-                                dilutionRate = 12;
-                                areaCoverage = 100;
-                            } else if (pestType === 'Cockroaches' || pestType === 'Ants' || pestType === 'Bed Bugs') {
-                                dilutionRate = 20;
-                                areaCoverage = 100;
-                            } else if (pestType === 'Mosquitoes' || pestType === 'Flies') {
-                                dilutionRate = 20;
-                                areaCoverage = 100;
-                            } else if (pestType === 'Grass Problems' || pestType === 'Weeds') {
-                                dilutionRate = 30;
-                                areaCoverage = 100;
-                            }
-
-                            // Adjust based on chemical type
-                            if (chemicalType === 'Herbicide') {
-                                dilutionRate = 30;
-                            } else if (chemicalType === 'Rodenticide') {
-                                // Rodenticides typically don't use dilution
-                                dilutionRate = 0;
-                            } else if (chemicalType === 'Disinfection') {
-                                dilutionRate = 50;
-                            }
-
-                            // Set the values
-                            $('#editDilutionRate').val(dilutionRate);
-                            $('#editAreaCoverage').val(areaCoverage);
-
-                            // Update the calculator
-                            updateDilutionCalculator(true);
-                        });
-
-                        // Also update when chemical type changes in edit mode
-                        $('#editType').off('change').on('change', function() {
-                            // Trigger the target pest change handler to recalculate
-                            $('#editTargetPest').trigger('change');
-                        });
                     }
                 },
                 error: function(xhr, status, error) {
@@ -1378,6 +1540,13 @@ try {
         // Update chemical
         $('#editChemicalForm').submit(function(e) {
             e.preventDefault();
+            
+            // Check if calculation was performed before allowing submission
+            if (!$('#editChemicalForm').data('calculation-performed')) {
+                alert('Please perform a dilution calculation using the calculator before updating the chemical information.');
+                return;
+            }
+            
             if(confirm('Are you sure you want to update this chemical?')) {
                 const formData = {
                     id: $('#editChemicalId').val(),
@@ -1391,8 +1560,11 @@ try {
                     expiration_date: $('#editExpirationDate').val(),
                     description: $('#editDescription').val(),
                     safety_info: $('#editSafetyInfo').val(),
-                    dilution_rate: $('#editDilutionRate').val(),
-                    area_coverage: $('#editAreaCoverage').val()
+                    dilution_rate: $('#edit_hidden_dilution_rate').val(),
+                    area_coverage: $('#edit_hidden_area_coverage').val(),
+                    manual_area: $('#edit_hidden_manual_area').val(),
+                    manual_solution_rate: $('#edit_hidden_manual_solution_rate').val(),
+                    manual_dilution_ratio: $('#edit_hidden_manual_dilution_ratio').val()
                 };
 
                 $.ajax({
@@ -1475,16 +1647,52 @@ try {
                         const dilutionRate = response.data.dilution_rate || 20;
                         const areaCoverage = response.data.area_coverage || 100;
 
-                        $('#viewDilutionRate').text(dilutionRate + ' ml per liter');
-                        $('#viewAreaCoverage').text(areaCoverage + ' m² per liter');
+                        // Calculate manual calculator inputs from stored values
+                        let area, solutionRate, ratio;
+                        if (response.data.manual_area) {
+                            area = response.data.manual_area;
+                            solutionRate = response.data.manual_solution_rate;
+                            ratio = response.data.manual_dilution_ratio;
+                        } else {
+                            area = 100;
+                            solutionRate = (1 / areaCoverage).toFixed(4);
+                            ratio = dilutionRate + ':' + (1000 - dilutionRate);
+                        }
+
+                        $('#viewArea').text(area + ' sq. m');
+                        $('#viewSolutionRate').text(parseFloat(solutionRate).toString() + ' liters per sq. m');
+                        $('#viewDilutionRatio').text(ratio);
 
                         // Calculate example values
-                        const targetArea = 200; // Fixed at 200 m²
+                        const targetArea = area; // Use the displayed area
                         const totalSolution = (targetArea / areaCoverage).toFixed(2);
                         const totalChemical = (dilutionRate * totalSolution).toFixed(2);
+                        const waterNeeded = (totalSolution - totalChemical / 1000).toFixed(2);
 
-                        $('#viewTotalSolution').text(totalSolution);
-                        $('#viewTotalChemical').text(totalChemical);
+                        const output = `
+                            <div class="dilution-preview">
+                                <p><strong>For a ${targetArea} sq. m area:</strong></p>
+                                <ul>
+                                    <li><strong>Total solution needed:</strong> ${totalSolution} liters</li>
+                                    <li><strong>Chemical needed:</strong> ${totalChemical} ml</li>
+                                    <li><strong>Water needed:</strong> ${waterNeeded} liters</li>
+                                </ul>
+                                <p><strong>Explanation:</strong></p>
+                                <p>
+                                    With a dilution rate of ${dilutionRate} ml per liter and area coverage of ${areaCoverage} m² per liter:
+                                    <br><br>
+                                    Calculation:
+                                    <br>
+                                    • Total solution = Area ÷ Area coverage = ${targetArea} ÷ ${areaCoverage} = ${totalSolution} liters
+                                    <br>
+                                    • Chemical = Dilution rate × Total solution = ${dilutionRate} × ${totalSolution} = ${totalChemical} ml
+                                    <br>
+                                    • Water = Total solution - Chemical = ${totalSolution} - ${totalChemical / 1000} = ${waterNeeded} liters
+                                </p>
+                            </div>
+                        `;
+
+                        $('#viewDilutionExample').html(output);
 
                         $('#viewChemicalModal').modal('show');
                     } else {

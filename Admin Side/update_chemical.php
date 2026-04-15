@@ -16,6 +16,9 @@ try {
     $safety_info = $_POST['safety_info'] ?? null;
     $dilution_rate = isset($_POST['dilution_rate']) ? (float)$_POST['dilution_rate'] : null;
     $area_coverage = isset($_POST['area_coverage']) ? (float)$_POST['area_coverage'] : 100;
+    $manual_area = isset($_POST['manual_area']) ? (float)$_POST['manual_area'] : null;
+    $manual_solution_rate = isset($_POST['manual_solution_rate']) ? (float)$_POST['manual_solution_rate'] : null;
+    $manual_dilution_ratio = $_POST['manual_dilution_ratio'] ?? null;
 
     // Calculate status based on quantity
     $status = 'In Stock';
@@ -37,7 +40,10 @@ try {
                               description = ?,
                               safety_info = ?,
                               dilution_rate = ?,
-                              area_coverage = ?
+                              area_coverage = ?,
+                              manual_area = ?,
+                              manual_solution_rate = ?,
+                              manual_dilution_ratio = ?
                           WHERE id = ?");
 
     $stmt->execute([
@@ -53,11 +59,15 @@ try {
         $safety_info,
         $dilution_rate,
         $area_coverage,
+        $manual_area,
+        $manual_solution_rate,
+        $manual_dilution_ratio,
         $chemicalId
     ]);
 
-    $description = "Updated chemical: $chemical_name";
-    $pdo->exec("INSERT INTO admin_activity_logs (staff_id, action_type, entity_type, entity_id, description) VALUES ({$_SESSION['user_id']}, 'edit', 'chemical', $chemicalId, '$description')");
+    // Activity logging temporarily disabled - admin_activity_logs table not found
+    // $description = "Updated chemical: $chemical_name";
+    // $pdo->exec("INSERT INTO admin_activity_logs (staff_id, action_type, entity_type, entity_id, description) VALUES ({$_SESSION['user_id']}, 'edit', 'chemical', $chemicalId, '$description')");
 
     echo json_encode(['success' => true]);
 } catch(Exception $e) {
