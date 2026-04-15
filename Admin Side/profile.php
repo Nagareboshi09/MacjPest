@@ -58,129 +58,180 @@ $admin = $stmt->get_result()->fetch_assoc();
 $success_message = '';
 $error_message = '';
 
+// CSRF token generation
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['update_profile'])) {
-    $full_name = $conn->real_escape_string($_POST['full_name']);
-    $email = $conn->real_escape_string($_POST['email']);
-    $contact_number = $conn->real_escape_string($_POST['contact_number']);
-    $new_username = $conn->real_escape_string($_POST['username']);
+    if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+        $error_message = "Invalid request token.";
+    } else {
+        if (isset($_POST['update_profile'])) {
+            $full_name = $conn->real_escape_string($_POST['full_name']);
+            $email = $conn->real_escape_string($_POST['email']);
+            $contact_number = $conn->real_escape_string($_POST['contact_number']);
+            $new_username = $conn->real_escape_string($_POST['username']);
 
-    // Check if username is being changed and if it's already taken
-    if ($new_username !== $username) {
-        $check_username = $conn->prepare("SELECT staff_id FROM office_staff WHERE username = ? AND staff_id != ?");
-        $check_username->bind_param("si", $new_username, $staff_id);
-        $check_username->execute();
-        $result = $check_username->get_result();
+            // Check if username is being changed and if it's already taken
+            if ($new_username !== $username) {
+                $check_username = $conn->prepare("SELECT staff_id FROM office_staff WHERE username = ? AND staff_id != ?");
+                $check_username->bind_param("si", $new_username, $staff_id);
+                $check_username->execute();
+                $result = $check_username->get_result();
 
-        if ($result->num_rows > 0) {
-            $error_message = "Username already taken. Please choose a different one.";
-        } else {
-            $username = $new_username;
-            $_SESSION['username'] = $new_username;
-        }
-    }
-
-    // Handle password change
-    $password_sql = "";
-    if (!empty($_POST['new_password'])) {
-        $current_password = $_POST['current_password'];
-        $new_password = $_POST['new_password'];
-        $confirm_password = $_POST['confirm_password'];
-
-        // Check if current password is correct
-        $check_password = $conn->prepare("SELECT password FROM office_staff WHERE staff_id = ?");
-        $check_password->bind_param("i", $staff_id);
-        $check_password->execute();
-        $result = $check_password->get_result();
-        $current_hash = $result->fetch_assoc()['password'];
-
-        if (md5($current_password) !== $current_hash) {
-            $error_message = "Current password is incorrect.";
-        } elseif ($new_password !== $confirm_password) {
-            $error_message = "New password and confirmation do not match.";
-        } else {
-            $hashed_password = md5($new_password);
-            $password_sql = ", password = '$hashed_password'";
-        }
-    }
-
-    // Handle profile picture upload
-    $profile_picture_sql = "";
-    if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
-        $upload_dir = "../uploads/admin/";
-
-        // Create directory if it doesn't exist
-        if (!file_exists($upload_dir)) {
-            mkdir($upload_dir, 0777, true);
-        }
-
-        $file_name = uniqid() . '_' . basename($_FILES['profile_picture']['name']);
-        $target_file = $upload_dir . $file_name;
-
-        // Check if file is an image
-        $check = getimagesize($_FILES['profile_picture']['tmp_name']);
-        if ($check !== false) {
-            // Upload file
-            if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $target_file)) {
-                $profile_picture_sql = ", profile_picture = '$file_name'";
-            } else {
-                $error_message = "Failed to upload profile picture.";
+                if ($result->num_rows > 0) {
+                    $error_message = "Username already taken. Please choose a different one.";
+                } else {
+                    $username = $new_username;
+                    $_SESSION['username'] = $new_username;
+                }
             }
-        } else {
-            $error_message = "Uploaded file is not an image.";
-        }
-    }
 
-    // Update profile if no errors
-    if (empty($error_message)) {
-        $update_sql = "UPDATE office_staff SET
-                      username = '$new_username',
-                      full_name = '$full_name',
-                      email = '$email',
-                      contact_number = '$contact_number'
-                      $password_sql
-                      $profile_picture_sql
-                      WHERE staff_id = $staff_id";
+            // Handle profile picture upload
+            $profile_picture_sql = "";
+            if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
+                $upload_dir = "../uploads/admin/";
+                // Security note: Ensure the uploads directory has .htaccess with 'php_flag engine off' or '<Files "*.php"> Deny from all </Files>' to prevent PHP execution
+                $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif'];
+                $allowed_mime_types = ['image/jpeg', 'image/png', 'image/gif'];
 
-        if ($conn->query($update_sql)) {
-            $success_message = "Profile updated successfully!";
+                $original_name = $_FILES['profile_picture']['name'];
+                $tmp_name = $_FILES['profile_picture']['tmp_name'];
 
-            // Refresh admin data
-            $stmt = $conn->prepare("SELECT * FROM office_staff WHERE staff_id = ?");
-            $stmt->bind_param("i", $staff_id);
-            $stmt->execute();
-            $admin = $stmt->get_result()->fetch_assoc();
-        } else {
-            $error_message = "Failed to update profile: " . $conn->error;
-        }
-    }
-    } elseif (isset($_POST['change_password'])) {
-        // Handle password change
-        $current_password = $_POST['current_password'];
-        $new_password = $_POST['new_password'];
-        $confirm_password = $_POST['confirm_password'];
+                // Get file extension
+                $ext = strtolower(pathinfo($original_name, PATHINFO_EXTENSION));
 
-        // Check if current password is correct
-        $check_password = $conn->prepare("SELECT password FROM office_staff WHERE staff_id = ?");
-        $check_password->bind_param("i", $staff_id);
-        $check_password->execute();
-        $result = $check_password->get_result();
-        $current_hash = $result->fetch_assoc()['password'];
+                // Validate extension
+                if (!in_array($ext, $allowed_extensions)) {
+                    $error_message = "Invalid file extension. Only JPG, JPEG, PNG, and GIF are allowed.";
+                } else {
+                    // Validate MIME type
+                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                    $mime_type = finfo_file($finfo, $tmp_name);
+                    finfo_close($finfo);
 
-        if (md5($current_password) !== $current_hash) {
-            $error_message = "Current password is incorrect.";
-        } elseif ($new_password !== $confirm_password) {
-            $error_message = "New password and confirmation do not match.";
-        } elseif (strlen($new_password) < 6) {
-            $error_message = "New password must be at least 6 characters long.";
-        } else {
-            $hashed_password = md5($new_password);
-            $update_password = $conn->prepare("UPDATE office_staff SET password = ? WHERE staff_id = ?");
-            $update_password->bind_param("si", $hashed_password, $staff_id);
-            if ($update_password->execute()) {
-                $success_message = "Password changed successfully!";
+                    if (!in_array($mime_type, $allowed_mime_types)) {
+                        $error_message = "Invalid file type. Only image files are allowed.";
+                    } else {
+                        // Create directory if it doesn't exist
+                        if (!file_exists($upload_dir)) {
+                            mkdir($upload_dir, 0777, true);
+                        }
+
+                        // Generate safe filename with validated extension
+                        $file_name = uniqid() . '.' . $ext;
+                        $target_file = $upload_dir . $file_name;
+
+                        // Additional image validation
+                        $check = getimagesize($tmp_name);
+                        if ($check !== false) {
+                            // Upload file
+                            if (move_uploaded_file($tmp_name, $target_file)) {
+                                $profile_picture_sql = ", profile_picture = '$file_name'";
+                            } else {
+                                $error_message = "Failed to upload profile picture.";
+                            }
+                        } else {
+                            $error_message = "Uploaded file is not a valid image.";
+                        }
+                    }
+                }
+            }
+
+            // Update profile if no errors
+            if (empty($error_message)) {
+                // Collect fields to update
+                $fields = [
+                    'username'        => $new_username,
+                    'full_name'       => $full_name,
+                    'email'           => $email,
+                    'contact_number'  => $contact_number,
+                ];
+
+                // If profile picture is being changed, we already computed $file_name above
+                if (!empty($profile_picture_sql)) {
+                    $fields['profile_picture'] = $file_name;
+                }
+
+                // Build SET clause and parameters
+                $set_parts = [];
+                $params = [];
+                $types = '';
+
+                foreach ($fields as $column => $value) {
+                    $set_parts[] = "$column = ?";
+                    $params[] = $value;
+                    $types .= 's';
+                }
+
+                $sql = "UPDATE office_staff SET " . implode(', ', $set_parts) . " WHERE staff_id = ?";
+                $types .= 'i';
+                $params[] = $staff_id;
+
+                $stmt_update = $conn->prepare($sql);
+                if ($stmt_update === false) {
+                    $error_message = "Failed to prepare profile update: " . $conn->error;
+                } else {
+                    $stmt_update->bind_param($types, ...$params);
+
+                    if ($stmt_update->execute()) {
+                        $success_message = "Profile updated successfully!";
+                        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+
+                        // Refresh admin data
+                        $stmt = $conn->prepare("SELECT * FROM office_staff WHERE staff_id = ?");
+                        $stmt->bind_param("i", $staff_id);
+                        $stmt->execute();
+                        $admin = $stmt->get_result()->fetch_assoc();
+                    } else {
+                        $error_message = "Failed to update profile: " . $stmt_update->error;
+                    }
+
+                    $stmt_update->close();
+                }
+            }
+        } elseif (isset($_POST['change_password'])) {
+            // Handle password change
+            $current_password = $_POST['current_password'];
+            $new_password = $_POST['new_password'];
+            $confirm_password = $_POST['confirm_password'];
+
+            // Check if current password is correct
+            $check_password = $conn->prepare("SELECT password FROM office_staff WHERE staff_id = ?");
+            $check_password->bind_param("i", $staff_id);
+            $check_password->execute();
+            $result = $check_password->get_result();
+            $current_hash = $result->fetch_assoc()['password'];
+
+            $password_valid = false;
+            if (password_verify($current_password, $current_hash)) {
+                $password_valid = true;
+            } elseif (strlen($current_hash) == 32 && md5($current_password) === $current_hash) {
+                $password_valid = true;
+                // Rehash legacy MD5 to bcrypt
+                $new_hash = password_hash($current_password, PASSWORD_DEFAULT);
+                $rehash_stmt = $conn->prepare("UPDATE office_staff SET password = ? WHERE staff_id = ?");
+                $rehash_stmt->bind_param("si", $new_hash, $staff_id);
+                $rehash_stmt->execute();
+            }
+
+            if (!$password_valid) {
+                $error_message = "Current password is incorrect.";
+            } elseif ($new_password !== $confirm_password) {
+                $error_message = "New password and confirmation do not match.";
+            } elseif (strlen($new_password) < 6) {
+                $error_message = "New password must be at least 6 characters long.";
             } else {
-                $error_message = "Failed to change password: " . $conn->error;
+                $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+                $update_password = $conn->prepare("UPDATE office_staff SET password = ? WHERE staff_id = ?");
+                $update_password->bind_param("si", $hashed_password, $staff_id);
+                if ($update_password->execute()) {
+                    $success_message = "Password changed successfully!";
+                    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+                } else {
+                    $error_message = "Failed to change password: " . $conn->error;
+                }
             }
         }
     }
@@ -231,9 +282,9 @@ $profile_picture_url = !empty($admin['profile_picture'])
             </div>
 
             <div class="user-info">
-                <img src="<?php echo $profile_picture_url; ?>" alt="Profile" class="user-avatar" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
+                <img src="<?php echo htmlspecialchars($profile_picture_url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>" alt="Profile" class="user-avatar" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
                 <div>
-                    <div class="user-name"><?= $_SESSION['username'] ?? 'Admin' ?></div>
+                    <div class="user-name"><?= htmlspecialchars($_SESSION['username'] ?? 'Admin', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></div>
                     <div class="user-role">Administrator</div>
                 </div>
             </div>
@@ -273,14 +324,14 @@ $profile_picture_url = !empty($admin['profile_picture'])
 
                 <?php if (!empty($success_message)): ?>
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <?php echo $success_message; ?>
+                        <?php echo htmlspecialchars($success_message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 <?php endif; ?>
 
                 <?php if (!empty($error_message)): ?>
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <?php echo $error_message; ?>
+                        <?php echo htmlspecialchars($error_message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 <?php endif; ?>
@@ -288,15 +339,15 @@ $profile_picture_url = !empty($admin['profile_picture'])
                 <div class="profile-container">
                     <div class="profile-user-header">
                         <div class="profile-picture-container">
-                            <img src="<?php echo $profile_picture_url; ?>" alt="Profile Picture" class="profile-picture" id="profilePicturePreview">
+                            <img src="<?php echo htmlspecialchars($profile_picture_url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>" alt="Profile Picture" class="profile-picture" id="profilePicturePreview">
                             <label for="profile_picture" class="profile-picture-edit" title="Change profile picture">
                                 <i class="fas fa-camera"></i>
                             </label>
                         </div>
                         <div class="profile-info">
-                            <h1><?php echo htmlspecialchars($admin['full_name'] ?? $admin['username']); ?></h1>
-                            <p><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($admin['email'] ?? 'No email set'); ?></p>
-                            <p><i class="fas fa-phone"></i> <?php echo htmlspecialchars($admin['contact_number'] ?? 'No contact number set'); ?></p>
+                            <h1><?php echo htmlspecialchars($admin['full_name'] ?? $admin['username'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></h1>
+                            <p><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($admin['email'] ?? 'No email set', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></p>
+                            <p><i class="fas fa-phone"></i> <?php echo htmlspecialchars($admin['contact_number'] ?? 'No contact number set', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></p>
                             <p><i class="fas fa-user-shield"></i> Administrator</p>
                             <span class="admin-badge"><i class="fas fa-crown me-1"></i> Admin Access</span>
                         </div>
@@ -409,13 +460,14 @@ $profile_picture_url = !empty($admin['profile_picture'])
                         <div class="tab-content" id="profileTabsContent">
                             <div class="tab-pane fade show active" id="edit" role="tabpanel" aria-labelledby="edit-tab">
                                 <form method="POST" enctype="multipart/form-data">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-group">
                                                 <label for="username" class="form-label">Username</label>
                                                 <div class="input-group">
                                                     <span class="input-group-text"><i class="fas fa-user"></i></span>
-                                                    <input type="text" class="form-control" id="username" name="username" value="<?php echo htmlspecialchars($admin['username']); ?>" required>
+                                                    <input type="text" class="form-control" id="username" name="username" value="<?php echo htmlspecialchars($admin['username'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>" required>
                                                 </div>
                                             </div>
                                         </div>
@@ -424,7 +476,7 @@ $profile_picture_url = !empty($admin['profile_picture'])
                                                 <label for="full_name" class="form-label">Full Name</label>
                                                 <div class="input-group">
                                                     <span class="input-group-text"><i class="fas fa-id-card"></i></span>
-                                                    <input type="text" class="form-control" id="full_name" name="full_name" value="<?php echo htmlspecialchars($admin['full_name'] ?? ''); ?>">
+                                                    <input type="text" class="form-control" id="full_name" name="full_name" value="<?php echo htmlspecialchars($admin['full_name'] ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>">
                                                 </div>
                                             </div>
                                         </div>
@@ -436,7 +488,7 @@ $profile_picture_url = !empty($admin['profile_picture'])
                                                 <label for="email" class="form-label">Email</label>
                                                 <div class="input-group">
                                                     <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                                                    <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($admin['email'] ?? ''); ?>">
+                                                    <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($admin['email'] ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>">
                                                 </div>
                                             </div>
                                         </div>
@@ -445,7 +497,7 @@ $profile_picture_url = !empty($admin['profile_picture'])
                                                 <label for="contact_number" class="form-label">Contact Number</label>
                                                 <div class="input-group">
                                                     <span class="input-group-text"><i class="fas fa-phone"></i></span>
-                                                    <input type="text" class="form-control" id="contact_number" name="contact_number" value="<?php echo htmlspecialchars($admin['contact_number'] ?? ''); ?>" pattern="09[0-9]{9}" title="Please enter a valid 11-digit Philippine mobile number starting with '09'">
+                                                    <input type="text" class="form-control" id="contact_number" name="contact_number" value="<?php echo htmlspecialchars($admin['contact_number'] ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>" pattern="09[0-9]{9}" title="Please enter a valid 11-digit Philippine mobile number starting with '09'">
                                                 </div>
                                                 <small class="form-text text-muted">Format: 09XXXXXXXXX (11 digits)</small>
                                             </div>
@@ -477,8 +529,9 @@ $profile_picture_url = !empty($admin['profile_picture'])
 
                              <div class="tab-pane fade" id="security" role="tabpanel" aria-labelledby="security-tab">
                                  <div class="security-section">
-                                     <form method="POST" action="">
-                                         <div class="security-card">
+                                      <form method="POST" action="">
+                                          <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                                          <div class="security-card">
                                              <h4><i class="fas fa-lock"></i> Change Password</h4>
                                              <p class="text-muted">Update your password to keep your account secure</p>
 
@@ -489,6 +542,9 @@ $profile_picture_url = !empty($admin['profile_picture'])
                                                          <div class="input-group">
                                                              <span class="input-group-text"><i class="fas fa-key"></i></span>
                                                              <input type="password" class="form-control" id="current_password" name="current_password" required>
+                                                             <span class="input-group-text password-toggle" data-target="current_password" style="cursor: pointer;">
+                                                                 <i class="fas fa-eye"></i>
+                                                             </span>
                                                          </div>
                                                      </div>
                                                  </div>
@@ -498,6 +554,9 @@ $profile_picture_url = !empty($admin['profile_picture'])
                                                          <div class="input-group">
                                                              <span class="input-group-text"><i class="fas fa-lock"></i></span>
                                                              <input type="password" class="form-control" id="new_password" name="new_password" required>
+                                                             <span class="input-group-text password-toggle" data-target="new_password" style="cursor: pointer;">
+                                                                 <i class="fas fa-eye"></i>
+                                                             </span>
                                                          </div>
                                                      </div>
                                                  </div>
@@ -507,6 +566,9 @@ $profile_picture_url = !empty($admin['profile_picture'])
                                                          <div class="input-group">
                                                              <span class="input-group-text"><i class="fas fa-check-circle"></i></span>
                                                              <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                                                             <span class="input-group-text password-toggle" data-target="confirm_password" style="cursor: pointer;">
+                                                                 <i class="fas fa-eye"></i>
+                                                             </span>
                                                          </div>
                                                      </div>
                                                  </div>
@@ -525,12 +587,12 @@ $profile_picture_url = !empty($admin['profile_picture'])
                                          <div class="last-login-info">
                                              <strong>Last Login:</strong>
                                              <?php
-                                             $last_login = $admin['last_login'] ?? null;
-                                             if ($last_login) {
-                                                 echo date('F j, Y \a\t g:i A', strtotime($last_login));
-                                             } else {
-                                                 echo 'No login history available';
-                                             }
+                                              $last_login = $admin['last_login'] ?? null;
+                                              if ($last_login) {
+                                                  echo htmlspecialchars(date('F j, Y \a\t g:i A', strtotime($last_login)), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+                                              } else {
+                                                  echo htmlspecialchars('No login history available', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+                                              }
                                              ?>
                                          </div>
                                      </div>
@@ -542,7 +604,7 @@ $profile_picture_url = !empty($admin['profile_picture'])
                                          <div class="session-item">
                                              <div class="session-info">
                                                  <div class="session-device">Current Session</div>
-                                                 <div class="session-time"><?php echo date('F j, Y \a\t g:i A'); ?> - <?php echo $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown Device'; ?></div>
+                                                  <div class="session-time"><?php echo date('F j, Y \a\t g:i A'); ?> - <?php echo htmlspecialchars($_SERVER['HTTP_USER_AGENT'] ?? 'Unknown Device', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></div>
                                              </div>
                                              <button class="btn-revoke" disabled>Current</button>
                                          </div>
@@ -715,6 +777,21 @@ $profile_picture_url = !empty($admin['profile_picture'])
             // Mobile menu toggle
             $('#menuToggle').on('click', function() {
                 $('.sidebar').toggleClass('active');
+            });
+
+            // Password visibility toggle
+            $(document).on('click', '.password-toggle', function() {
+                const targetId = $(this).data('target');
+                const passwordInput = $('#' + targetId);
+                const icon = $(this).find('i');
+
+                if (passwordInput.attr('type') === 'password') {
+                    passwordInput.attr('type', 'text');
+                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                } else {
+                    passwordInput.attr('type', 'password');
+                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                }
             });
 
             // Fetch notifications immediately

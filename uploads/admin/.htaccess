@@ -1,0 +1,4 @@
+php_flag engine off
+RemoveHandler .php .php3 .php4 .php5 .phtml
+RemoveType .php .php3 .php4 .php5 .phtml
+Options -ExecCGI
