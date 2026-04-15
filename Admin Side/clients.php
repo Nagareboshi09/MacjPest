@@ -121,7 +121,6 @@ if (!$clients) {
                     <li><a href="profile.php"><i class="fas fa-user-circle"></i> My Profile</a></li>
                     <li><a href="chemical_inventory.php"><i class="fas fa-flask"></i> Chemical Inventory</a></li>
                     <li><a href="services.php"><i class="fas fa-concierge-bell"></i> Services</a></li>
-                    <li><a href="technicians.php"><i class="fas fa-user-md"></i> Technicians</a></li>
                     <li  class="active"><a href="clients.php"><i class="fas fa-users"></i> Clients</a></li>
                     <li><a href="SignOut.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>

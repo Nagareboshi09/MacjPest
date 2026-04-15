@@ -606,6 +606,24 @@
   margin-bottom: 20px;
 }
 
+/* Holiday Calendar specific styles */
+#holidayCalendar {
+  width: 100%;
+  background-color: white;
+  border-radius: 8px;
+  min-height: 500px;
+  position: relative;
+}
+
+/* Ensure FullCalendar components are visible */
+#holidayCalendar .fc-view-harness {
+  background-color: white;
+}
+
+#holidayCalendar .fc-col-header {
+  background-color: #f8f9fa;
+}
+
 .fc-header-toolbar {
   margin-bottom: 1.5em !important;
 }

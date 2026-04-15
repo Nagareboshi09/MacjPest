@@ -370,6 +370,11 @@ $completion_percentage = 0; // 0% since the job is not completed
     <!-- Leaflet Map JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
 
+    <!-- FullCalendar CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css">
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+
     <style>
 
 
@@ -1043,6 +1048,169 @@ $completion_percentage = 0; // 0% since the job is not completed
                 grid-column: span 1;
             }
         }
+
+        #holidayCalendar {
+            width: 100%;
+            max-width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* FullCalendar Custom Styles */
+        #holidayCalendar .fc {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #holidayCalendar .fc-header-toolbar {
+            background: #3B82F6;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px 12px 0 0;
+            margin-bottom: 0;
+        }
+
+        #holidayCalendar .fc-toolbar-title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        #holidayCalendar .fc-button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 8px 16px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        #holidayCalendar .fc-button:not(:disabled):active,
+        #holidayCalendar .fc-button-active {
+            background: white !important;
+            color: #3B82F6 !important;
+            border-color: white !important;
+        }
+
+        #holidayCalendar .fc-daygrid-body {
+            background: white;
+            border-radius: 0 0 12px 12px;
+        }
+
+        #holidayCalendar .fc-daygrid-day {
+            border: 1px solid #e5e7eb;
+        }
+
+        #holidayCalendar .fc-day-today {
+            background: #dbeafe !important;
+            border: 2px solid #3B82F6 !important;
+        }
+
+        #holidayCalendar .fc-event {
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 12px;
+            padding: 2px 6px;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #holidayCalendar .fc-col-header {
+            background: #f8fafc;
+            border-bottom: 2px solid #3B82F6;
+        }
+
+        #holidayCalendar .fc-col-header th {
+            padding: 12px;
+            font-weight: 600;
+            color: #374151;
+            text-transform: uppercase;
+            font-size: 13px;
+        }
+
+        #holidayCalendar .fc-daygrid-day-number {
+            font-weight: 600;
+            color: #374151;
+            padding: 8px;
+        }
+
+        /* Year display styling */
+        #yearDisplay {
+            font-size: 20px;
+            font-weight: 600;
+            color: #3B82F6;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        /* Button styling for year navigation */
+        #prevYearBtn, #nextYearBtn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            #holidayCalendar {
+                height: 400px !important;
+                border-radius: 8px;
+            }
+
+            #holidayCalendar .fc-header-toolbar {
+                padding: 10px;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            #holidayCalendar .fc-toolbar-title {
+                font-size: 18px;
+            }
+
+            #yearDisplay {
+                font-size: 16px;
+            }
+
+            #prevYearBtn, #nextYearBtn {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+        }
+
+        /* Loading animation for calendar */
+        .calendar-loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 500px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 12px;
+            color: #6B7280;
+            font-size: 16px;
+        }
+
+        .calendar-loading::before {
+            content: '';
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e5e7eb;
+            border-top: 3px solid #3B82F6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -1112,7 +1280,6 @@ $completion_percentage = 0; // 0% since the job is not completed
                     <li><a href="profile.php"><i class="fas fa-user-circle"></i> My Profile</a></li>
                     <li><a href="chemical_inventory.php"><i class="fas fa-flask"></i> Chemical Inventory</a></li>
                     <li><a href="services.php"><i class="fas fa-concierge-bell"></i> Services</a></li>
-                    <li><a href="technicians.php"><i class="fas fa-user-md"></i> Technicians</a></li>
                     <li><a href="clients.php"><i class="fas fa-users"></i> Clients</a></li>
                     <li><a href="SignOut.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
@@ -1130,137 +1297,7 @@ $completion_percentage = 0; // 0% since the job is not completed
                 <div class="chemicals-header">
                     <h1><i class="fas fa-chart-line"></i> Dashboard</h1>
                 </div>
-                <!-- Business Overview Section -->
-                <div class="dashboard-row">
-                    <div class="dashboard-card wide-card">
-                        <div class="card-header">
-                            <h3><i class="fas fa-briefcase"></i> Business Overview</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="business-overview-grid">
-                                <!-- Current Active Contracts -->
-                                <div class="overview-card">
-                                    <div class="overview-icon">
-                                        <i class="fas fa-file-contract"></i>
-                                    </div>
-                                    <div class="overview-info">
-                                        <h3>Active Contracts</h3>
-                                        <p class="overview-value"><?php echo $active_contracts; ?></p>
-                                        <span class="overview-label">Client-approved recurring contracts</span>
-                                        <div class="frequency-breakdown">
-                                            <span class="frequency-item weekly">
-                                                <i class="fas fa-calendar-week"></i> Weekly: <?php echo $weekly_contracts; ?>
-                                            </span>
-                                            <span class="frequency-item monthly">
-                                                <i class="fas fa-calendar-alt"></i> Monthly: <?php echo $monthly_contracts; ?>
-                                            </span>
-                                            <span class="frequency-item quarterly">
-                                                <i class="fas fa-calendar-check"></i> Quarterly: <?php echo $quarterly_contracts; ?>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
 
-                                <!-- Ending Contracts -->
-                                <div class="overview-card">
-                                    <div class="overview-icon ending">
-                                        <i class="fas fa-hourglass-end"></i>
-                                    </div>
-                                    <div class="overview-info">
-                                        <h3>Ending Contracts</h3>
-                                        <p class="overview-value"><?php echo $ending_contracts; ?></p>
-                                        <span class="overview-label">Ending in next 30 days (1-year term)</span>
-                                        <div class="frequency-breakdown">
-                                            <span class="frequency-item weekly">
-                                                <i class="fas fa-calendar-week"></i> Weekly: <?php echo $weekly_ending; ?>
-                                            </span>
-                                            <span class="frequency-item monthly">
-                                                <i class="fas fa-calendar-alt"></i> Monthly: <?php echo $monthly_ending; ?>
-                                            </span>
-                                            <span class="frequency-item quarterly">
-                                                <i class="fas fa-calendar-check"></i> Quarterly: <?php echo $quarterly_ending; ?>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Upcoming Job Orders -->
-                                <div class="overview-card">
-                                    <div class="overview-icon upcoming">
-                                        <i class="fas fa-calendar-plus"></i>
-                                    </div>
-                                    <div class="overview-info">
-                                        <h3>Upcoming Jobs</h3>
-                                        <p class="overview-value"><?php echo $upcoming_jobs; ?></p>
-                                        <span class="overview-label">Future scheduled jobs</span>
-                                    </div>
-                                </div>
-
-
-
-                                <!-- Active Treatments -->
-                                <div class="overview-card">
-                                    <div class="overview-icon treatments">
-                                        <i class="fas fa-spray-can"></i>
-                                    </div>
-                                    <div class="overview-info">
-                                        <h3>Active Treatments</h3>
-                                        <p class="overview-value"><?php echo $active_treatments; ?></p>
-                                        <span class="overview-label">Treatments in progress</span>
-                                    </div>
-                                </div>
-
-                                <!-- Service Trends -->
-                                <div class="overview-card wide">
-                                    <div class="overview-icon trends">
-                                        <i class="fas fa-chart-line"></i>
-                                    </div>
-                                    <div class="overview-info">
-                                        <h3>Service Trends</h3>
-                                        <div class="trends-container">
-                                            <?php foreach ($service_trends as $index => $trend): ?>
-                                            <div class="trend-item">
-                                                <span class="trend-label"><?php echo $trend['type_of_work']; ?></span>
-                                                <div class="trend-bar-container">
-                                                    <div class="trend-bar" style="width: <?php echo min(100, $trend['count'] * 10); ?>%"></div>
-                                                </div>
-                                                <span class="trend-value"><?php echo $trend['count']; ?></span>
-                                            </div>
-                                            <?php endforeach; ?>
-                                            <?php if (empty($service_trends)): ?>
-                                            <div class="no-data">No service trend data available</div>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Completed Treatments Today -->
-                                <div class="overview-card">
-                                    <div class="overview-icon completed">
-                                        <i class="fas fa-check-circle"></i>
-                                    </div>
-                                    <div class="overview-info">
-                                        <h3>Completed Today</h3>
-                                        <p class="overview-value"><?php echo $completed_today; ?></p>
-                                        <span class="overview-label">Treatments completed today</span>
-                                    </div>
-                                </div>
-
-                                <!-- Pending Appointments -->
-                                <div class="overview-card">
-                                    <div class="overview-icon pending">
-                                        <i class="fas fa-clock"></i>
-                                    </div>
-                                    <div class="overview-info">
-                                        <h3>Pending Appointments</h3>
-                                        <p class="overview-value"><?php echo $pending_appts; ?></p>
-                                        <span class="overview-label">Awaiting service</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Top Row Cards -->
                 <div class="dashboard-row">
@@ -1281,22 +1318,7 @@ $completion_percentage = 0; // 0% since the job is not completed
                         </div>
                     </div>
 
-                    <!-- Services Card -->
-                    <div class="dashboard-card">
-                        <div class="card-header">
-                            <h3><i class="fas fa-concierge-bell"></i> Services</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="card-value"><?php echo $total_service_types; ?></div>
-                            <div class="card-trend positive">
-                                <i class="fas fa-chart-line"></i>
-                                Service types available
-                            </div>
-                            <div class="card-chart">
-                                <canvas id="servicesChart" height="60"></canvas>
-                            </div>
-                        </div>
-                    </div>
+
 
                     <!-- Clients Card -->
                     <div class="dashboard-card">
@@ -1320,55 +1342,7 @@ $completion_percentage = 0; // 0% since the job is not completed
 
 
 
-                <!-- Third Row - Monthly Sales Chart and Today's Job Orders -->
-                <div class="dashboard-row">
-                    <!-- Monthly Sales Chart -->
-                    <div class="dashboard-card" style="flex: 3;">
-                        <div class="card-header">
-                            <h3>Monthly Sales (<?php echo date('Y'); ?>, Jan-<?php echo date('M'); ?>)</h3>
-                            <div class="card-dropdown">
-                                <select id="salesPeriodFilter">
-                                    <option value="current_year">Current Year</option>
-                                    <option value="previous_year">Previous Year</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="sales-chart-container">
-                                <canvas id="monthlySalesChart" height="100"></canvas>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- Today's Job Orders Card -->
-                    <div class="dashboard-card" style="flex: 1;">
-                        <div class="card-header">
-                            <h3><i class="fas fa-clipboard-list"></i> Today's Job Orders</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="card-value"><?php echo $pending_jobs_today; ?></div>
-                            <div class="card-trend <?php echo $pending_jobs_today > 0 ? 'negative' : 'positive'; ?>">
-                                <i class="fas fa-tasks"></i>
-                                Pending Jobs Today
-                            </div>
-
-                            <div class="progress-container">
-                                <div class="progress-header">
-                                    <span>Completion Progress</span>
-                                    <span><?php echo $completion_percentage; ?>%</span>
-                                </div>
-                                <div class="progress-bar-bg">
-                                    <div class="progress-bar <?php echo $completion_percentage < 50 ? 'progress-bar-low' : ($completion_percentage < 80 ? 'progress-bar-medium' : 'progress-bar-high'); ?>" style="width: <?php echo $completion_percentage; ?>%;"></div>
-                                </div>
-                                <div class="progress-footer">
-                                    <?php echo $completed_today; ?> of <?php echo $total_jobs_today; ?> jobs completed
-                                </div>
-                            </div>
-
-
-                        </div>
-                    </div>
-                </div>
 
 
 
@@ -1464,57 +1438,30 @@ $completion_percentage = 0; // 0% since the job is not completed
                     </div>
                 </div>
 
-                <!-- Sixth Row - Active Users & Bandwidth -->
+                <!-- Calendar Row -->
                 <div class="dashboard-row">
-                    <!-- Active Admin Users -->
-                    <div class="dashboard-card">
-                        <div class="card-header">
-                            <h3>Active Admin Users</h3>
+                    <div class="dashboard-card" style="width: 100%; position: relative; overflow: hidden;">
+                        <div class="card-header" style="background: #3B82F6; color: white; border-radius: 12px 12px 0 0;">
+                            <h3 style="margin: 0; display: flex; align-items: center; font-size: 18px;">
+                                <i class="fas fa-calendar-alt" style="margin-right: 10px;"></i>
+                                Calendar
+                            </h3>
                         </div>
-                        <div class="card-body">
-                            <div class="active-users-list">
-                                <?php foreach ($active_users as $user): ?>
-                                <div class="user-item">
-                                    <div class="user-avatar">
-                                        <?php
-                                        // Check if profile picture exists
-                                        $profile_picture = '';
-                                        $staff_id = $user['staff_id'];
-
-                                        // Check if the office_staff table has profile_picture column
-                                        $result = $conn->query("SHOW COLUMNS FROM office_staff LIKE 'profile_picture'");
-                                        if ($result->num_rows > 0) {
-                                            $stmt = $conn->prepare("SELECT profile_picture FROM office_staff WHERE staff_id = ?");
-                                            $stmt->bind_param("i", $staff_id);
-                                            $stmt->execute();
-                                            $result = $stmt->get_result();
-                                            if ($row = $result->fetch_assoc()) {
-                                                $profile_picture = $row['profile_picture'];
-                                            }
-                                        }
-
-                                        $profile_picture_url = !empty($profile_picture)
-                                            ? "../uploads/admin/" . $profile_picture
-                                            : "../assets/default-profile.jpg";
-                                        ?>
-                                        <img src="<?php echo $profile_picture_url; ?>" alt="Admin User">
-                                    </div>
-                                    <div class="user-info">
-                                        <div class="user-name"><?php echo htmlspecialchars($user['username'] ?? ''); ?></div>
-                                        <div class="user-email"><?php echo htmlspecialchars($user['email'] ?? ''); ?></div>
-                                        <div class="user-last-active">Admin User</div>
-                                    </div>
-                                </div>
-                                <?php endforeach; ?>
+                        <div class="card-body" style="padding: 20px;">
+                            <h3 id="yearDisplay" aria-live="polite">Calendar for <?php echo date('Y'); ?></h3>
+                            <div style="margin-bottom: 15px; display: flex; justify-content: center; gap: 10px;">
+                                <button id="prevYearBtn" aria-label="Load holidays for the previous year">
+                                    <i class="fas fa-chevron-left" style="margin-right: 5px;"></i>Previous Year
+                                </button>
+                                <button id="nextYearBtn" aria-label="Load holidays for the next year">
+                                    Next Year<i class="fas fa-chevron-right" style="margin-left: 5px;"></i>
+                                </button>
                             </div>
-                            <div class="view-all">
-                                <a href="profile.php">Manage admin users <i class="fas fa-chevron-right"></i></a>
-                            </div>
+                            <div id="holidayCalendar" style="height: 500px; border-radius: 8px; overflow: hidden;"></div>
                         </div>
                     </div>
-
-
                 </div>
+
             </div>
         </main>
     </div>
@@ -1549,105 +1496,9 @@ $completion_percentage = 0; // 0% since the job is not completed
                 });
             }
 
-            // Services Chart
-            const servicesCtx = document.getElementById('servicesChart');
-            if (servicesCtx) {
-                new Chart(servicesCtx, {
-                    type: 'line',
-                    data: {
-                        labels: <?php echo json_encode(array_column($service_trends, 'type_of_work')); ?>,
-                        datasets: [{
-                            label: 'Service Usage',
-                            data: <?php echo json_encode(array_column($service_trends, 'count')); ?>,
-                            borderColor: '#10B981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: { x: { display: false }, y: { display: false } },
-                        elements: { point: { radius: 0 } }
-                    }
-                });
-            }
 
-            // Monthly Sales Chart
-            const monthlySalesCtx = document.getElementById('monthlySalesChart');
-            if (monthlySalesCtx) {
-                // Only use months that have data (past and current months)
-                const monthlyLabels = [];
-                const monthlySalesData = [];
 
-                <?php
-                // Only include months that have data
-                foreach ($monthly_sales_data as $month => $value) {
-                    echo "monthlyLabels.push('$month');\n";
-                    echo "monthlySalesData.push($value);\n";
-                }
-                ?>
 
-                console.log("Monthly Labels:", monthlyLabels);
-                console.log("Monthly Sales Data:", monthlySalesData);
-
-                const monthlySalesChart = new Chart(monthlySalesCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: monthlyLabels,
-                        datasets: [{
-                            label: 'Sales (PHP)',
-                            data: monthlySalesData,
-                            backgroundColor: '#3B82F6',
-                            borderRadius: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.dataset.label || '';
-                                        if (label) {
-                                            label += ': ';
-                                        }
-                                        if (context.parsed.y !== null) {
-                                            label += new Intl.NumberFormat('en-PH', {
-                                                style: 'currency',
-                                                currency: 'PHP'
-                                            }).format(context.parsed.y);
-                                        }
-                                        return label;
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: { grid: { display: false } },
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    callback: function(value) {
-                                        return '₱' + value.toLocaleString();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-
-                // Add event listener for the period filter
-                document.getElementById('salesPeriodFilter').addEventListener('change', function() {
-                    // In a real implementation, you would reload the data based on the selected period
-                    // For this demo, we'll just show an alert
-                    alert('In a real implementation, this would show sales data for: ' + this.value);
-                });
-            }
 
 
 
@@ -1697,6 +1548,203 @@ $completion_percentage = 0; // 0% since the job is not completed
         }
 
 
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentYear = <?php echo date('Y'); ?>;
+            let calendar; // Keep reference to destroy previous instance
+
+            // Hardcoded holidays as fallback (for 2026 only)
+            const hardcodedHolidays = [
+                { title: "Araw ng Bagong Taon", start: "2026-01-01", allDay: true, backgroundColor: '#EF4444' },
+                { title: "Chinese New Year", start: "2026-02-17", allDay: true, backgroundColor: '#EF4444' },
+                { title: "Anibersaryo ng Rebolusyon sa EDSA", start: "2026-02-25", allDay: true, backgroundColor: '#EF4444' },
+                { title: "Eid'l Fitr", start: "2026-03-20", allDay: true, backgroundColor: '#EF4444' },
+                { title: "Huwebes Santo", start: "2026-04-02", allDay: true, backgroundColor: '#EF4444' },
+                { title: "Biyernes Santo", start: "2026-04-03", allDay: true, backgroundColor: '#EF4444' },
+                { title: "Sabado de Gloria", start: "2026-04-04", allDay: true, backgroundColor: '#EF4444' },
+                { title: "Araw ng Kagitingan", start: "2026-04-09", allDay: true, backgroundColor: '#EF4444' },
+                { title: "Araw ng Paggawa", start: "2026-05-01", allDay: true, backgroundColor: '#EF4444' },
+                { title: "Eid'l Adha", start: "2026-05-27", allDay: true, backgroundColor: '#EF4444' },
+                { title: "Araw ng Kalayaan", start: "2026-06-12", allDay: true, backgroundColor: '#EF4444' },
+                { title: "Araw ni Ninoy Aquino", start: "2026-08-21", allDay: true, backgroundColor: '#EF4444' },
+                { title: "Araw ng mga Bayani", start: "2026-08-31", allDay: true, backgroundColor: '#EF4444' },
+                { title: "Araw ng mga Santo", start: "2026-11-02", allDay: true, backgroundColor: '#EF4444' },
+                { title: "Araw ni Bonifacio", start: "2026-11-30", allDay: true, backgroundColor: '#EF4444' },
+                { title: "Pasko", start: "2026-12-25", allDay: true, backgroundColor: '#EF4444' },
+                { title: "Araw ni Rizal", start: "2026-12-30", allDay: true, backgroundColor: '#EF4444' },
+                { title: "Bisperas ng Bagong Taon", start: "2026-12-31", allDay: true, backgroundColor: '#EF4444' }
+            ];
+
+            function loadHolidays(year) {
+                const calendarEl = document.getElementById('holidayCalendar');
+                calendarEl.innerHTML = '<div class="calendar-loading">Loading holidays...</div>';
+
+                const apiUrl = `https://tallyfy.com/national-holidays/api/PH/${year}.json`;
+                fetch(apiUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('API response:', data);
+                        const holidays = data.holidays.map(holiday => ({
+                            title: holiday.local_name,
+                            start: holiday.observed_date,
+                            allDay: true,
+                            backgroundColor: '#EF4444', // Red for holidays
+                            borderColor: '#DC2626',
+                            textColor: '#ffffff'
+                        }));
+                        initializeCalendar(holidays);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching holidays:', error);
+                        console.log('Using hardcoded holidays');
+                        initializeCalendar(hardcodedHolidays);
+                    });
+            }
+
+            function initializeCalendar(holidays) {
+                console.log('initializeCalendar called with', holidays.length, 'holidays');
+
+                // Check if FullCalendar is loaded
+                if (typeof FullCalendar === 'undefined') {
+                    console.error('FullCalendar is not loaded!');
+                    return;
+                }
+
+                // Add a test event (keep for current year, but adjust date if needed)
+                if (currentYear === 2026) {
+                    holidays.push({
+                        title: 'Test Holiday Today',
+                        start: '2026-04-15',
+                        allDay: true,
+                        backgroundColor: '#00FF00' // Green for test
+                    });
+                }
+                console.log('Initializing calendar with events:', holidays);
+
+                const calendarEl = document.getElementById('holidayCalendar');
+                console.log('Calendar element found:', calendarEl);
+
+                if (!calendarEl) {
+                    console.error('Calendar element #holidayCalendar not found!');
+                    return;
+                }
+
+                console.log('Calendar element dimensions:', calendarEl.offsetWidth, 'x', calendarEl.offsetHeight);
+
+                try {
+                    // Destroy previous calendar if exists
+                    if (calendar) {
+                        calendar.destroy();
+                    }
+
+                    // Create new calendar
+                    calendar = new FullCalendar.Calendar(calendarEl, {
+                        initialView: 'dayGridMonth',
+                        events: holidays,
+                        height: 500,
+                        headerToolbar: {
+                            left: 'prev,next today',
+                            center: 'title',
+                            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                        },
+                        dayMaxEvents: 3,
+                        moreLinkClick: 'popover',
+                        eventDisplay: 'block',
+                        eventBackgroundColor: '#EF4444',
+                        eventBorderColor: '#DC2626',
+                        eventTextColor: '#ffffff',
+                        dayMaxEventRows: true,
+                        displayEventTime: false,
+                        dayCellDidMount: function(info) {
+                            if (info.date.getDay() === 0) { // Sunday
+                                info.el.style.backgroundColor = '#fef2f2';
+                            }
+                        },
+                        eventClick: function(info) {
+                            // Create a custom popup for event details
+                            const eventDetails = `
+                                <div style="
+                                    position: fixed;
+                                    top: 50%;
+                                    left: 50%;
+                                    transform: translate(-50%, -50%);
+                                    background: white;
+                                    padding: 20px;
+                                    border-radius: 12px;
+                                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+                                    z-index: 2000;
+                                    max-width: 300px;
+                                    text-align: center;
+                                    border: 2px solid #EF4444;
+                                ">
+                                    <h3 style="color: #EF4444; margin: 0 0 10px 0; font-size: 18px;">${info.event.title}</h3>
+                                    <p style="margin: 0 0 15px 0; color: #6B7280;">${info.event.start.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                    <button onclick="this.parentElement.remove()" style="
+                                        background: #EF4444;
+                                        color: white;
+                                        border: none;
+                                        padding: 8px 16px;
+                                        border-radius: 6px;
+                                        cursor: pointer;
+                                        font-weight: 600;
+                                    ">Close</button>
+                                </div>
+                                <div style="
+                                    position: fixed;
+                                    top: 0;
+                                    left: 0;
+                                    right: 0;
+                                    bottom: 0;
+                                    background: rgba(0, 0, 0, 0.5);
+                                    z-index: 1999;
+                                " onclick="this.remove(); document.querySelector('.event-popup').remove()"></div>
+                            `;
+                            document.body.insertAdjacentHTML('beforeend', eventDetails);
+                        },
+                        eventDidMount: function(info) {
+                            // Add title attribute for tooltips
+                            info.el.setAttribute('title', `${info.event.title} - ${info.event.start.toLocaleDateString()}`);
+                        }
+                    });
+
+                    console.log('Calendar instance created:', calendar);
+                    calendar.render();
+                    console.log('Calendar render() called successfully');
+
+                    // Test if we can add an event programmatically
+                    setTimeout(() => {
+                        console.log('Testing calendar after render...');
+                        const events = calendar.getEvents();
+                        console.log('Calendar has', events.length, 'events after render');
+
+                    }, 1000);
+
+                } catch (error) {
+                    console.error('Error initializing calendar:', error);
+
+                    // Fallback: try to display basic content
+                    calendarEl.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Calendar failed to load. Check console for errors.</div>';
+                }
+            }
+
+            // Load initial holidays
+            loadHolidays(currentYear);
+
+            // Button event listeners
+            document.getElementById('prevYearBtn').addEventListener('click', function() {
+                currentYear--;
+                document.getElementById('yearDisplay').textContent = `Holidays for ${currentYear}`;
+                loadHolidays(currentYear);
+            });
+
+            document.getElementById('nextYearBtn').addEventListener('click', function() {
+                currentYear++;
+                document.getElementById('yearDisplay').textContent = `Holidays for ${currentYear}`;
+                loadHolidays(currentYear);
+            });
+        });
     </script>
 
     <!-- Notification Scripts -->
