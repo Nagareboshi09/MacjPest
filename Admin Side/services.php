@@ -551,11 +551,11 @@ try {
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label class="required">Service Name</label>
-                                    <input type="text" class="form-control" name="name" id="serviceName" required>
+                                    <input type="text" class="form-control" name="name" id="serviceName" required autocomplete="off">
                                 </div>
                                 <div class="form-group">
                                     <label>Description</label>
-                                    <textarea class="form-control" name="description" id="serviceDescription" rows="3" placeholder="Brief description of the service"></textarea>
+                                    <textarea class="form-control" name="description" id="serviceDescription" rows="3" placeholder="Brief description of the service" autocomplete="off"></textarea>
                                 </div>
                                 <div class="form-group">
                                     <label>Status</label>
@@ -704,7 +704,7 @@ try {
                             <input type="hidden" id="pestCheckboxId" name="id">
                             <div class="form-group">
                                 <label for="pestCheckboxName" class="required">Pest CheckBox Name</label>
-                                <input type="text" class="form-control" id="pestCheckboxName" name="name" required>
+                                <input type="text" class="form-control" id="pestCheckboxName" name="name" required autocomplete="off">
                             </div>
                             <div class="form-group">
                                 <label for="pestCheckboxStatus">Status</label>

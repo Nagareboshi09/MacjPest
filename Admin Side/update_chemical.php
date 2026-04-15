@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once '../db_config.php';
 
 try {
@@ -54,6 +55,9 @@ try {
         $area_coverage,
         $chemicalId
     ]);
+
+    $description = "Updated chemical: $chemical_name";
+    $pdo->exec("INSERT INTO admin_activity_logs (staff_id, action_type, entity_type, entity_id, description) VALUES ({$_SESSION['user_id']}, 'edit', 'chemical', $chemicalId, '$description')");
 
     echo json_encode(['success' => true]);
 } catch(Exception $e) {

@@ -24,6 +24,9 @@ $hasContactNumber = $result->num_rows > 0;
 $result = $conn->query("SHOW COLUMNS FROM office_staff LIKE 'profile_picture'");
 $hasProfilePicture = $result->num_rows > 0;
 
+$result = $conn->query("SHOW COLUMNS FROM office_staff LIKE 'last_login'");
+$hasLastLogin = $result->num_rows > 0;
+
 // Add missing columns if needed
 if (!$hasFullName) {
     $conn->query("ALTER TABLE office_staff ADD COLUMN full_name VARCHAR(100) DEFAULT NULL");
@@ -41,17 +44,22 @@ if (!$hasProfilePicture) {
     $conn->query("ALTER TABLE office_staff ADD COLUMN profile_picture VARCHAR(255) DEFAULT NULL");
 }
 
+if (!$hasLastLogin) {
+    $conn->query("ALTER TABLE office_staff ADD COLUMN last_login TIMESTAMP DEFAULT NULL");
+}
+
 // Get admin profile data
 $stmt = $conn->prepare("SELECT * FROM office_staff WHERE staff_id = ?");
 $stmt->bind_param("i", $staff_id);
 $stmt->execute();
 $admin = $stmt->get_result()->fetch_assoc();
 
-// Handle profile update
+// Handle profile update and password change
 $success_message = '';
 $error_message = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['update_profile'])) {
     $full_name = $conn->real_escape_string($_POST['full_name']);
     $email = $conn->real_escape_string($_POST['email']);
     $contact_number = $conn->real_escape_string($_POST['contact_number']);
@@ -146,6 +154,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             $error_message = "Failed to update profile: " . $conn->error;
         }
     }
+    } elseif (isset($_POST['change_password'])) {
+        // Handle password change
+        $current_password = $_POST['current_password'];
+        $new_password = $_POST['new_password'];
+        $confirm_password = $_POST['confirm_password'];
+
+        // Check if current password is correct
+        $check_password = $conn->prepare("SELECT password FROM office_staff WHERE staff_id = ?");
+        $check_password->bind_param("i", $staff_id);
+        $check_password->execute();
+        $result = $check_password->get_result();
+        $current_hash = $result->fetch_assoc()['password'];
+
+        if (md5($current_password) !== $current_hash) {
+            $error_message = "Current password is incorrect.";
+        } elseif ($new_password !== $confirm_password) {
+            $error_message = "New password and confirmation do not match.";
+        } elseif (strlen($new_password) < 6) {
+            $error_message = "New password must be at least 6 characters long.";
+        } else {
+            $hashed_password = md5($new_password);
+            $update_password = $conn->prepare("UPDATE office_staff SET password = ? WHERE staff_id = ?");
+            $update_password->bind_param("si", $hashed_password, $staff_id);
+            if ($update_password->execute()) {
+                $success_message = "Password changed successfully!";
+            } else {
+                $error_message = "Failed to change password: " . $conn->error;
+            }
+        }
+    }
 }
 
 // Get profile picture URL
@@ -166,415 +204,7 @@ $profile_picture_url = !empty($admin['profile_picture'])
     <link rel="stylesheet" href="css/modern-modal.css">
     <link rel="stylesheet" href="css/notification-override.css">
     <link rel="stylesheet" href="css/notification-viewed.css">
-    <style>
-        /* Additional notification styles for Admin Side */
-        .notification-container {
-            position: relative;
-            margin-right: 20px;
-            cursor: pointer;
-        }
 
-        .notification-icon {
-            font-size: 1.5rem;
-            color: var(--primary-color);
-            transition: color 0.3s ease;
-        }
-
-        .notification-badge {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background-color: #e74c3c;
-            color: white;
-            font-size: 0.75rem;
-            font-weight: bold;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .notification-dropdown {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            width: 350px;
-            max-height: 400px;
-            overflow-y: auto;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            z-index: 1000;
-            display: none;
-        }
-
-        .notification-dropdown.show {
-            display: block;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-        }
-
-        .user-name {
-            font-weight: 600;
-            color: var(--text-color);
-        }
-
-        .user-role {
-            font-size: 0.75rem;
-            color: var(--text-light);
-        }
-
-        /* Profile specific styles */
-        :root {
-            --primary-color: #3b82f6;
-            --primary-dark: #2563eb;
-            --secondary-color: #10b981;
-            --secondary-dark: #059669;
-            --danger-color: #ef4444;
-            --warning-color: #f59e0b;
-            --info-color: #3b82f6;
-            --light-color: #f3f4f6;
-            --dark-color: #1f2937;
-            --gray-color: #6b7280;
-            --border-color: #e5e7eb;
-            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-
-        /* Profile specific styles */
-        .profile-content {
-            width: 100%;
-            flex: 1;
-        }
-
-        .profile-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .profile-header h1 {
-            margin: 0;
-            color: var(--primary-color);
-            font-size: 24px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-        }
-
-        .profile-header h1 i {
-            margin-right: 10px;
-        }
-
-        .profile-container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 30px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-            transition: all 0.3s ease;
-        }
-
-        .profile-picture-container {
-            position: relative;
-            margin-right: 40px;
-        }
-
-        .profile-picture {
-            width: 180px;
-            height: 180px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 5px solid white;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .profile-picture:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .profile-picture-edit {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            background-color: var(--primary-color);
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            transition: background-color 0.3s ease;
-        }
-
-        .profile-picture-edit:hover {
-            background-color: var(--primary-dark);
-        }
-
-        .profile-info {
-            flex: 1;
-        }
-
-        .profile-info h1 {
-            margin-bottom: 10px;
-            color: var(--dark-color);
-            font-size: 2.2rem;
-            font-weight: 700;
-        }
-
-        .profile-info p {
-            color: var(--gray-color);
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            font-size: 1.1rem;
-        }
-
-        .profile-info p i {
-            width: 25px;
-            margin-right: 10px;
-            color: var(--primary-color);
-        }
-
-        .profile-info .admin-badge {
-            display: inline-block;
-            background-color: var(--primary-color);
-            color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            margin-top: 10px;
-        }
-
-        .profile-tabs {
-            margin-bottom: 30px;
-        }
-
-        .nav-tabs .nav-link {
-            color: var(--gray-color);
-            font-weight: 500;
-            padding: 10px 20px;
-            border: none;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s ease;
-        }
-
-        .nav-tabs .nav-link.active {
-            color: var(--primary-color);
-            border-bottom-color: var(--primary-color);
-            background-color: transparent;
-        }
-
-        .nav-tabs .nav-link:hover:not(.active) {
-            border-bottom-color: var(--border-color);
-        }
-
-        .profile-content {
-            padding: 20px 0;
-        }
-
-        .form-group {
-            margin-bottom: 25px;
-        }
-
-        .form-label {
-            font-weight: 500;
-            color: var(--dark-color);
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        .form-control {
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 12px 15px;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
-        }
-
-        .form-text {
-            color: var(--gray-color);
-            font-size: 0.85rem;
-            margin-top: 5px;
-        }
-
-        .password-section {
-            margin-top: 40px;
-            padding: 25px;
-            border-radius: 10px;
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-        }
-
-        .password-section h4 {
-            color: var(--dark-color);
-            margin-bottom: 20px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-        }
-
-        .password-section h4 i {
-            margin-right: 10px;
-            color: var(--primary-color);
-        }
-
-        .btn {
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .btn-update {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-            color: white;
-            padding: 12px 25px;
-        }
-
-        .btn-update:hover {
-            background-color: var(--primary-dark);
-            border-color: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-update:active {
-            transform: translateY(0);
-        }
-
-        .btn-update i {
-            margin-right: 8px;
-        }
-
-        .activity-card {
-            background-color: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: var(--card-shadow);
-            transition: transform 0.3s ease;
-        }
-
-        .activity-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .activity-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .activity-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: #e0f2fe;
-            color: var(--primary-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            font-size: 1.2rem;
-        }
-
-        .activity-title {
-            font-weight: 600;
-            color: var(--dark-color);
-            margin: 0;
-        }
-
-        .activity-time {
-            color: var(--gray-color);
-            font-size: 0.85rem;
-            margin-top: 3px;
-        }
-
-        .activity-content {
-            color: var(--gray-color);
-            margin-bottom: 0;
-        }
-
-        .stats-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background-color: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: var(--card-shadow);
-            text-align: center;
-            transition: transform 0.3s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .stat-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background-color: #e0f2fe;
-            color: var(--primary-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 15px;
-            font-size: 1.5rem;
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--dark-color);
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            color: var(--gray-color);
-            font-size: 0.9rem;
-        }
-
-        @media (max-width: 768px) {
-            .profile-header {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .profile-picture-container {
-                margin-right: 0;
-                margin-bottom: 30px;
-            }
-
-            .stats-container {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
 </head>
 <body>
    <!-- Header -->
@@ -601,27 +231,6 @@ $profile_picture_url = !empty($admin['profile_picture'])
             </div>
 
             <div class="user-info">
-                <?php
-                // Check if profile picture exists
-                $staff_id = $_SESSION['user_id'];
-                $profile_picture = '';
-
-                // Check if the office_staff table has profile_picture column
-                $result = $conn->query("SHOW COLUMNS FROM office_staff LIKE 'profile_picture'");
-                if ($result->num_rows > 0) {
-                    $stmt = $conn->prepare("SELECT profile_picture FROM office_staff WHERE staff_id = ?");
-                    $stmt->bind_param("i", $staff_id);
-                    $stmt->execute();
-                    $result = $stmt->get_result();
-                    if ($row = $result->fetch_assoc()) {
-                        $profile_picture = $row['profile_picture'];
-                    }
-                }
-
-                $profile_picture_url = !empty($profile_picture)
-                    ? "../uploads/admin/" . $profile_picture
-                    : "../assets/default-profile.jpg";
-                ?>
                 <img src="<?php echo $profile_picture_url; ?>" alt="Profile" class="user-avatar" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
                 <div>
                     <div class="user-name"><?= $_SESSION['username'] ?? 'Admin' ?></div>
@@ -696,36 +305,52 @@ $profile_picture_url = !empty($admin['profile_picture'])
                     <!-- Stats Section -->
                     <div class="stats-container">
                         <?php
-                        // Get some basic stats for the admin
-                        $total_technicians = 0;
-                        $total_clients = 0;
-                        $total_appointments = 0;
-                        $total_job_orders = 0;
+                         // Get some basic stats for the admin
+                         $total_technicians = 0;
+                         $total_clients = 0;
+                         $total_appointments = 0;
+                         $total_job_orders = 0;
 
-                        // Count technicians
-                        $result = $conn->query("SELECT COUNT(*) as count FROM technicians");
-                        if ($result && $row = $result->fetch_assoc()) {
-                            $total_technicians = $row['count'];
-                        }
+                         // Count technicians
+                         try {
+                             $result = $conn->query("SELECT COUNT(*) as count FROM technicians");
+                             if ($result && $row = $result->fetch_assoc()) {
+                                 $total_technicians = $row['count'];
+                             }
+                         } catch (Exception $e) {
+                             $total_technicians = 0; // Table doesn't exist
+                         }
 
-                        // Count clients
-                        $result = $conn->query("SELECT COUNT(*) as count FROM clients");
-                        if ($result && $row = $result->fetch_assoc()) {
-                            $total_clients = $row['count'];
-                        }
+                         // Count clients
+                         try {
+                             $result = $conn->query("SELECT COUNT(*) as count FROM clients");
+                             if ($result && $row = $result->fetch_assoc()) {
+                                 $total_clients = $row['count'];
+                             }
+                         } catch (Exception $e) {
+                             $total_clients = 0;
+                         }
 
-                        // Count appointments
-                        $result = $conn->query("SELECT COUNT(*) as count FROM appointments");
-                        if ($result && $row = $result->fetch_assoc()) {
-                            $total_appointments = $row['count'];
-                        }
+                         // Count appointments
+                         try {
+                             $result = $conn->query("SELECT COUNT(*) as count FROM appointments");
+                             if ($result && $row = $result->fetch_assoc()) {
+                                 $total_appointments = $row['count'];
+                             }
+                         } catch (Exception $e) {
+                             $total_appointments = 0;
+                         }
 
-                        // Count job orders
-                        $result = $conn->query("SELECT COUNT(*) as count FROM job_order");
-                        if ($result && $row = $result->fetch_assoc()) {
-                            $total_job_orders = $row['count'];
-                        }
-                        ?>
+                         // Count job orders
+                         try {
+                             $result = $conn->query("SELECT COUNT(*) as count FROM job_order");
+                             if ($result && $row = $result->fetch_assoc()) {
+                                 $total_job_orders = $row['count'];
+                             }
+                         } catch (Exception $e) {
+                             $total_job_orders = 0;
+                         }
+                         ?>
 
                         <div class="stat-card">
                             <div class="stat-icon">
@@ -765,6 +390,11 @@ $profile_picture_url = !empty($admin['profile_picture'])
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link active" id="edit-tab" data-bs-toggle="tab" data-bs-target="#edit" type="button" role="tab" aria-controls="edit" aria-selected="true">
                                     <i class="fas fa-user-edit me-2"></i>Edit Profile
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab" aria-controls="security" aria-selected="false">
+                                    <i class="fas fa-shield-alt me-2"></i>Security
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
@@ -835,40 +465,7 @@ $profile_picture_url = !empty($admin['profile_picture'])
                                         <small class="form-text text-muted">Upload a new profile picture (optional). Recommended size: 200x200 pixels or larger.</small>
                                     </div>
 
-                                    <div class="password-section">
-                                        <h4><i class="fas fa-lock"></i> Change Password</h4>
-                                        <p class="text-muted">Leave these fields blank if you don't want to change your password</p>
 
-                                        <div class="row">
-                                            <div class="col-md-4">
-                                                <div class="form-group">
-                                                    <label for="current_password" class="form-label">Current Password</label>
-                                                    <div class="input-group">
-                                                        <span class="input-group-text"><i class="fas fa-key"></i></span>
-                                                        <input type="password" class="form-control" id="current_password" name="current_password">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="form-group">
-                                                    <label for="new_password" class="form-label">New Password</label>
-                                                    <div class="input-group">
-                                                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                                                        <input type="password" class="form-control" id="new_password" name="new_password">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="form-group">
-                                                    <label for="confirm_password" class="form-label">Confirm New Password</label>
-                                                    <div class="input-group">
-                                                        <span class="input-group-text"><i class="fas fa-check-circle"></i></span>
-                                                        <input type="password" class="form-control" id="confirm_password" name="confirm_password">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
 
                                     <div class="form-group text-end mt-4">
                                         <button type="submit" name="update_profile" class="btn btn-primary btn-update">
@@ -876,9 +473,86 @@ $profile_picture_url = !empty($admin['profile_picture'])
                                         </button>
                                     </div>
                                 </form>
-                            </div>
+                             </div>
 
-                            <div class="tab-pane fade" id="activity" role="tabpanel" aria-labelledby="activity-tab">
+                             <div class="tab-pane fade" id="security" role="tabpanel" aria-labelledby="security-tab">
+                                 <div class="security-section">
+                                     <form method="POST" action="">
+                                         <div class="security-card">
+                                             <h4><i class="fas fa-lock"></i> Change Password</h4>
+                                             <p class="text-muted">Update your password to keep your account secure</p>
+
+                                             <div class="row">
+                                                 <div class="col-md-4">
+                                                     <div class="form-group">
+                                                         <label for="current_password" class="form-label">Current Password</label>
+                                                         <div class="input-group">
+                                                             <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                                             <input type="password" class="form-control" id="current_password" name="current_password" required>
+                                                         </div>
+                                                     </div>
+                                                 </div>
+                                                 <div class="col-md-4">
+                                                     <div class="form-group">
+                                                         <label for="new_password" class="form-label">New Password</label>
+                                                         <div class="input-group">
+                                                             <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                                             <input type="password" class="form-control" id="new_password" name="new_password" required>
+                                                         </div>
+                                                     </div>
+                                                 </div>
+                                                 <div class="col-md-4">
+                                                     <div class="form-group">
+                                                         <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                                         <div class="input-group">
+                                                             <span class="input-group-text"><i class="fas fa-check-circle"></i></span>
+                                                             <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                                                         </div>
+                                                     </div>
+                                                 </div>
+                                             </div>
+
+                                             <div class="form-group text-end">
+                                                 <button type="submit" name="change_password" class="btn btn-primary">
+                                                     <i class="fas fa-save"></i> Change Password
+                                                 </button>
+                                             </div>
+                                         </div>
+                                     </form>
+
+                                     <div class="security-card">
+                                         <h4><i class="fas fa-clock"></i> Login History</h4>
+                                         <div class="last-login-info">
+                                             <strong>Last Login:</strong>
+                                             <?php
+                                             $last_login = $admin['last_login'] ?? null;
+                                             if ($last_login) {
+                                                 echo date('F j, Y \a\t g:i A', strtotime($last_login));
+                                             } else {
+                                                 echo 'No login history available';
+                                             }
+                                             ?>
+                                         </div>
+                                     </div>
+
+                                     <div class="security-card">
+                                         <h4><i class="fas fa-desktop"></i> Active Sessions</h4>
+                                         <p class="text-muted">Manage your active login sessions</p>
+
+                                         <div class="session-item">
+                                             <div class="session-info">
+                                                 <div class="session-device">Current Session</div>
+                                                 <div class="session-time"><?php echo date('F j, Y \a\t g:i A'); ?> - <?php echo $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown Device'; ?></div>
+                                             </div>
+                                             <button class="btn-revoke" disabled>Current</button>
+                                         </div>
+
+                                         <p class="text-muted mt-3">Note: Only one session is currently supported. Enhanced session management will be available in future updates.</p>
+                                     </div>
+                                 </div>
+                             </div>
+
+                             <div class="tab-pane fade" id="activity" role="tabpanel" aria-labelledby="activity-tab">
                                 <div id="activity-loading" class="text-center p-4" style="display: none;">
                                     <div class="spinner-border text-primary" role="status">
                                         <span class="visually-hidden">Loading...</span>

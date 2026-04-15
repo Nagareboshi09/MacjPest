@@ -676,12 +676,12 @@ try {
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label class="required"><i class="fas fa-flask"></i> Chemical Name</label>
-                                            <input type="text" class="form-control" name="chemical_name" placeholder="Enter Chemical Name" required>
+                                            <label class="required" for="chemical_name"><i class="fas fa-flask"></i> Chemical Name</label>
+                                            <input type="text" class="form-control" id="chemical_name" name="chemical_name" placeholder="Enter Chemical Name" required>
                                         </div>
                                         <div class="form-group">
-                                            <label class="required"><i class="fas fa-tag"></i> Type</label>
-                                            <select class="form-control" name="type" required>
+                                            <label class="required" for="type"><i class="fas fa-tag"></i> Type</label>
+                                            <select class="form-control" id="type" name="type" required>
                                                 <option value="">Select Type</option>
                                                 <option>Insecticide</option>
                                                 <option>Herbicide</option>
@@ -691,7 +691,7 @@ try {
                                             </select>
                                         </div>
                                         <div class="form-group">
-                                            <label><i class="fas fa-bug"></i> Target Pest</label>
+                                            <label for="target_pest"><i class="fas fa-bug"></i> Target Pest</label>
                                             <select class="form-control" name="target_pest" id="target_pest">
                                                 <option value="">Select Target Pest</option>
                                                 <option>Crawling & Flying Pest</option>
@@ -711,13 +711,13 @@ try {
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label class="required"><i class="fas fa-balance-scale"></i> Quantity</label>
-                                            <input type="number" step="0.01" class="form-control"
+                                            <label class="required" for="quantity"><i class="fas fa-balance-scale"></i> Quantity</label>
+                                            <input type="number" step="0.01" class="form-control" id="quantity"
                                                 name="quantity" min="0" required>
                                         </div>
                                         <div class="form-group">
-                                            <label class="required"><i class="fas fa-ruler"></i> Unit</label>
-                                            <select class="form-control" name="unit" required>
+                                            <label class="required" for="unit"><i class="fas fa-ruler"></i> Unit</label>
+                                            <select class="form-control" id="unit" name="unit" required>
                                                 <option>Liters</option>
                                                 <option>Kilograms</option>
                                                 <option>Grams</option>
@@ -733,14 +733,14 @@ try {
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label><i class="fas fa-industry"></i> Manufacturer</label>
-                                            <input type="text" class="form-control" name="manufacturer" placeholder="Enter manufacturer name">
+                                            <label for="manufacturer"><i class="fas fa-industry"></i> Manufacturer</label>
+                                            <input type="text" class="form-control" id="manufacturer" name="manufacturer" placeholder="Enter manufacturer name">
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label><i class="fas fa-truck"></i> Supplier</label>
-                                            <input type="text" class="form-control" name="supplier" placeholder="Enter supplier name">
+                                            <label for="supplier"><i class="fas fa-truck"></i> Supplier</label>
+                                            <input type="text" class="form-control" id="supplier" name="supplier" placeholder="Enter supplier name">
                                         </div>
                                     </div>
                                 </div>
@@ -751,7 +751,7 @@ try {
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label><i class="fas fa-tint"></i> Dilution Rate (ml per liter)</label>
+                                            <label for="dilution_rate"><i class="fas fa-tint"></i> Dilution Rate (ml per liter)</label>
                                             <input type="number" step="0.1" min="0" class="form-control"
                                                 name="dilution_rate" id="dilution_rate" placeholder="e.g., 20 ml per liter">
                                             <small class="form-text text-muted">Amount of chemical per liter of water</small>
@@ -759,7 +759,7 @@ try {
                                     </div>
                                      <div class="col-md-6">
                                          <div class="form-group">
-                                             <label><i class="fas fa-expand"></i> Area Coverage (m² per liter)</label>
+                                             <label for="area_coverage"><i class="fas fa-expand"></i> Area Coverage (m² per liter)</label>
                                              <input type="number" step="0.1" min="0" class="form-control"
                                                  name="area_coverage" id="area_coverage" value="100" placeholder="e.g., 100 m² per liter">
                                              <small class="form-text text-muted">Area covered by 1 liter of diluted solution</small>
@@ -769,7 +769,7 @@ try {
                                  <div class="row mt-3">
                                      <div class="col-md-6">
                                          <div class="form-group">
-                                             <label><i class="fas fa-calculator"></i> Manual Total Solution (liters for 200 m²)</label>
+                                             <label for="manual_total_solution"><i class="fas fa-calculator"></i> Manual Total Solution (liters for 200 m²)</label>
                                              <input type="number" step="0.01" min="0" class="form-control"
                                                  name="manual_total_solution" id="manual_total_solution" placeholder="e.g., 2.0">
                                              <small class="form-text text-muted">Enter total solution needed manually (overrides automatic calculation)</small>
@@ -777,7 +777,7 @@ try {
                                      </div>
                                      <div class="col-md-6">
                                          <div class="form-group">
-                                             <label><i class="fas fa-flask"></i> Manual Total Chemical (ml for 200 m²)</label>
+                                             <label for="manual_total_chemical"><i class="fas fa-flask"></i> Manual Total Chemical (ml for 200 m²)</label>
                                              <input type="number" step="0.01" min="0" class="form-control"
                                                  name="manual_total_chemical" id="manual_total_chemical" placeholder="e.g., 40.0">
                                              <small class="form-text text-muted">Enter total chemical needed manually (overrides automatic calculation)</small>
@@ -824,20 +824,20 @@ try {
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label class="required"><i class="fas fa-calendar-alt"></i> Expiration Date</label>
-                                            <input type="date" class="form-control"
+                                            <label class="required" for="expiration_date"><i class="fas fa-calendar-alt"></i> Expiration Date</label>
+                                            <input type="date" class="form-control" id="expiration_date"
                                                 name="expiration_date" required
                                                 min="<?= date('Y-m-d') ?>">
                                         </div>
                                         <div class="form-group">
-                                            <label><i class="fas fa-align-left"></i> Description</label>
-                                            <textarea class="form-control" name="description" rows="2" placeholder="Brief description of the chemical"></textarea>
+                                            <label for="description"><i class="fas fa-align-left"></i> Description</label>
+                                            <textarea class="form-control" id="description" name="description" rows="2" placeholder="Brief description of the chemical"></textarea>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label><i class="fas fa-shield-alt"></i> Safety Information</label>
-                                            <textarea class="form-control" name="safety_info" rows="4" placeholder="Safety precautions and handling instructions"></textarea>
+                                            <label for="safety_info"><i class="fas fa-shield-alt"></i> Safety Information</label>
+                                            <textarea class="form-control" id="safety_info" name="safety_info" rows="4" placeholder="Safety precautions and handling instructions"></textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -967,11 +967,11 @@ try {
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label class="required"><i class="fas fa-flask"></i> Chemical Name</label>
+                                            <label class="required" for="editChemicalName"><i class="fas fa-flask"></i> Chemical Name</label>
                                             <input type="text" class="form-control" id="editChemicalName" name="chemical_name" required>
                                         </div>
                                         <div class="form-group">
-                                            <label class="required"><i class="fas fa-tag"></i> Type</label>
+                                            <label class="required" for="editType"><i class="fas fa-tag"></i> Type</label>
                                             <select class="form-control" id="editType" name="type" required>
                                                 <option value="">Select Type</option>
                                                 <option>Insecticide</option>
@@ -982,7 +982,7 @@ try {
                                             </select>
                                         </div>
                                         <div class="form-group">
-                                            <label><i class="fas fa-bug"></i> Target Pest</label>
+                                            <label for="editTargetPest"><i class="fas fa-bug"></i> Target Pest</label>
                                             <select class="form-control" name="target_pest" id="editTargetPest">
                                                 <option value="">Select Target Pest</option>
                                                 <option>Crawling & Flying Pest</option>
@@ -1002,12 +1002,12 @@ try {
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label class="required"><i class="fas fa-balance-scale"></i> Quantity</label>
+                                            <label class="required" for="editQuantity"><i class="fas fa-balance-scale"></i> Quantity</label>
                                             <input type="number" step="0.01" class="form-control"
                                                 name="quantity" id="editQuantity" min="0" required>
                                         </div>
                                         <div class="form-group">
-                                            <label class="required"><i class="fas fa-ruler"></i> Unit</label>
+                                            <label class="required" for="editUnit"><i class="fas fa-ruler"></i> Unit</label>
                                             <select class="form-control" id="editUnit" name="unit" required>
                                                 <option>Liters</option>
                                                 <option>Kilograms</option>
@@ -1024,13 +1024,13 @@ try {
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label><i class="fas fa-industry"></i> Manufacturer</label>
+                                            <label for="editManufacturer"><i class="fas fa-industry"></i> Manufacturer</label>
                                             <input type="text" class="form-control" id="editManufacturer" name="manufacturer">
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label><i class="fas fa-truck"></i> Supplier</label>
+                                            <label for="editSupplier"><i class="fas fa-truck"></i> Supplier</label>
                                             <input type="text" class="form-control" id="editSupplier" name="supplier">
                                         </div>
                                     </div>
@@ -1042,7 +1042,7 @@ try {
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label><i class="fas fa-tint"></i> Dilution Rate (ml per liter)</label>
+                                            <label for="editDilutionRate"><i class="fas fa-tint"></i> Dilution Rate (ml per liter)</label>
                                             <input type="number" step="0.1" min="0" class="form-control"
                                                 name="dilution_rate" id="editDilutionRate" placeholder="e.g., 20 ml per liter">
                                             <small class="form-text text-muted">Amount of chemical per liter of water</small>
@@ -1050,7 +1050,7 @@ try {
                                     </div>
                                      <div class="col-md-6">
                                          <div class="form-group">
-                                             <label><i class="fas fa-expand"></i> Area Coverage (m² per liter)</label>
+                                             <label for="editAreaCoverage"><i class="fas fa-expand"></i> Area Coverage (m² per liter)</label>
                                              <input type="number" step="0.1" min="0" class="form-control"
                                                  name="area_coverage" id="editAreaCoverage" placeholder="e.g., 100 m² per liter">
                                              <small class="form-text text-muted">Area covered by 1 liter of diluted solution</small>
@@ -1060,7 +1060,7 @@ try {
                                  <div class="row mt-3">
                                      <div class="col-md-6">
                                          <div class="form-group">
-                                             <label><i class="fas fa-calculator"></i> Manual Total Solution (liters for 200 m²)</label>
+                                             <label for="editManualTotalSolution"><i class="fas fa-calculator"></i> Manual Total Solution (liters for 200 m²)</label>
                                              <input type="number" step="0.01" min="0" class="form-control"
                                                  name="manual_total_solution" id="editManualTotalSolution" placeholder="e.g., 2.0">
                                              <small class="form-text text-muted">Enter total solution needed manually (overrides automatic calculation)</small>
@@ -1068,7 +1068,7 @@ try {
                                      </div>
                                      <div class="col-md-6">
                                          <div class="form-group">
-                                             <label><i class="fas fa-flask"></i> Manual Total Chemical (ml for 200 m²)</label>
+                                             <label for="editManualTotalChemical"><i class="fas fa-flask"></i> Manual Total Chemical (ml for 200 m²)</label>
                                              <input type="number" step="0.01" min="0" class="form-control"
                                                  name="manual_total_chemical" id="editManualTotalChemical" placeholder="e.g., 40.0">
                                              <small class="form-text text-muted">Enter total chemical needed manually (overrides automatic calculation)</small>
@@ -1115,17 +1115,17 @@ try {
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label class="required"><i class="fas fa-calendar-alt"></i> Expiration Date</label>
+                                            <label class="required" for="editExpirationDate"><i class="fas fa-calendar-alt"></i> Expiration Date</label>
                                             <input type="date" class="form-control" id="editExpirationDate" name="expiration_date" required>
                                         </div>
                                         <div class="form-group">
-                                            <label><i class="fas fa-align-left"></i> Description</label>
+                                            <label for="editDescription"><i class="fas fa-align-left"></i> Description</label>
                                             <textarea class="form-control" id="editDescription" name="description" rows="2"></textarea>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label><i class="fas fa-shield-alt"></i> Safety Information</label>
+                                            <label for="editSafetyInfo"><i class="fas fa-shield-alt"></i> Safety Information</label>
                                             <textarea class="form-control" id="editSafetyInfo" name="safety_info" rows="4"></textarea>
                                         </div>
                                     </div>

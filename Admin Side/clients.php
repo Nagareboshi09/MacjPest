@@ -77,6 +77,35 @@ if (!$clients) {
             font-size: 0.75rem;
             color: var(--text-light);
         }
+
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .sort-icon {
+            margin-left: 5px;
+        }
+
+        .filters-section {
+            margin-bottom: 20px;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+        }
+
+        .filter-group label {
+            margin-right: 10px;
+            font-weight: 600;
+        }
+
+        .filter-group select {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -197,20 +226,34 @@ if (!$clients) {
                     </div>
                 </div>
 
+                <!-- Filters Section -->
+                <div class="filters-section">
+                    <div class="filter-group">
+                        <label for="statusFilter">Contract Status:</label>
+                        <select id="statusFilter">
+                            <option value="all">All</option>
+                            <option value="active">Active</option>
+                            <option value="expiring-soon">Expiring Soon</option>
+                            <option value="expired">Expired</option>
+                            <option value="no-contract">No Contract</option>
+                        </select>
+                    </div>
+                </div>
+
                 <!-- Clients Table -->
                 <div class="table-responsive">
                     <table class="table table-hover clients-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Name</th>
+                                <th data-column="client_id" class="sortable">ID <i class="fas fa-sort sort-icon"></i></th>
+                                <th data-column="name" class="sortable">Name <i class="fas fa-sort sort-icon"></i></th>
                                 <th>Email</th>
                                 <th>Contact</th>
                                 <th>Location</th>
-                                <th>Type of Place</th>
-                                <th>Registered</th>
+                                <th data-column="type_of_place" class="sortable">Type of Place <i class="fas fa-sort sort-icon"></i></th>
+                                <th data-column="registered_at" class="sortable">Registered <i class="fas fa-sort sort-icon"></i></th>
                                 <th>Contract Status</th>
-                                <th>Expiration Date</th>
+                                <th data-column="contract_end_date" class="sortable">Expiration Date <i class="fas fa-sort sort-icon"></i></th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -218,17 +261,27 @@ if (!$clients) {
                               <?php if ($clients->num_rows > 0): ?>
                                   <?php while($client = $clients->fetch_assoc()): ?>
                                       <?php
-                                      $statusClass = '';
-                                      if ($client['contract_end_date']) {
-                                          $endDate = strtotime($client['contract_end_date']);
-                                          if ($endDate < time()) {
-                                              $statusClass = 'expired';
-                                          } elseif ($endDate <= strtotime('+30 days')) {
-                                              $statusClass = 'expiring-soon';
-                                          }
-                                      }
-                                      ?>
-                                      <tr>
+                                       $statusClass = '';
+                                       $status = 'no-contract';
+                                       if ($client['contract_end_date']) {
+                                           $endDate = strtotime($client['contract_end_date']);
+                                           if ($endDate < time()) {
+                                               $statusClass = 'expired';
+                                               $status = 'expired';
+                                           } elseif ($endDate <= strtotime('+30 days')) {
+                                               $statusClass = 'expiring-soon';
+                                               $status = 'expiring-soon';
+                                           } else {
+                                               $status = 'active';
+                                           }
+                                       }
+                                       ?>
+                                       <tr data-client-id="<?= $client['client_id'] ?>"
+                                           data-name="<?= htmlspecialchars($client['first_name'] . ' ' . $client['last_name']) ?>"
+                                           data-type_of_place="<?= htmlspecialchars($client['type_of_place']) ?>"
+                                           data-registered_at="<?= $client['registered_at'] ?>"
+                                           data-contract_end_date="<?= $client['contract_end_date'] ?: '' ?>"
+                                           data-status="<?= $status ?>">
                                           <td><?= htmlspecialchars($client['client_id']) ?></td>
                                           <td><?= htmlspecialchars($client['first_name'] . ' ' . $client['last_name']) ?></td>
                                           <td><?= htmlspecialchars($client['email']) ?></td>
@@ -301,48 +354,48 @@ if (!$clients) {
                     <div class="form-section">
                         <h4><i class="fas fa-id-card"></i> Personal Information</h4>
                         <div class="form-row">
-                            <div class="form-group half-width">
-                                <label for="firstName">
-                                    <i class="fas fa-user"></i> First Name
-                                </label>
-                                <input type="text" id="firstName" name="first_name" required placeholder="Enter first name">
-                            </div>
-                            <div class="form-group half-width">
-                                <label for="lastName">
-                                    <i class="fas fa-user"></i> Last Name
-                                </label>
-                                <input type="text" id="lastName" name="last_name" required placeholder="Enter last name">
-                            </div>
+                             <div class="form-group half-width">
+                                 <label for="firstName">
+                                     <i class="fas fa-user"></i> First Name
+                                 </label>
+                                 <input type="text" id="firstName" name="first_name" required placeholder="Enter first name" autocomplete="given-name">
+                             </div>
+                             <div class="form-group half-width">
+                                 <label for="lastName">
+                                     <i class="fas fa-user"></i> Last Name
+                                 </label>
+                                 <input type="text" id="lastName" name="last_name" required placeholder="Enter last name" autocomplete="family-name">
+                             </div>
                         </div>
                     </div>
 
                     <div class="form-section">
                         <h4><i class="fas fa-address-book"></i> Contact Information</h4>
                         <div class="form-row">
-                            <div class="form-group half-width">
-                                <label for="email">
-                                    <i class="fas fa-envelope"></i> Email Address
-                                </label>
-                                <input type="email" id="email" name="email" required placeholder="client@example.com">
-                            </div>
-                            <div class="form-group half-width">
-                                <label for="contact">
-                                    <i class="fas fa-phone"></i> Contact Number
-                                </label>
-                                <input type="text" id="contact" name="contact_number" required placeholder="+1 (555) 123-4567">
-                            </div>
+                             <div class="form-group half-width">
+                                 <label for="email">
+                                     <i class="fas fa-envelope"></i> Email Address
+                                 </label>
+                                 <input type="email" id="email" name="email" required placeholder="client@example.com" autocomplete="email">
+                             </div>
+                             <div class="form-group half-width">
+                                 <label for="contact">
+                                     <i class="fas fa-phone"></i> Contact Number
+                                 </label>
+                                 <input type="text" id="contact" name="contact_number" required placeholder="+1 (555) 123-4567" autocomplete="tel">
+                             </div>
                         </div>
                     </div>
 
                     <div class="form-section">
                         <h4><i class="fas fa-map-marker-alt"></i> Location Details</h4>
                         <div class="form-row">
-                            <div class="form-group full-width">
-                                <label for="location">
-                                    <i class="fas fa-home"></i> Location Address
-                                </label>
-                                <input type="text" id="location" name="location_address" required placeholder="Enter complete address">
-                            </div>
+                             <div class="form-group full-width">
+                                 <label for="location">
+                                     <i class="fas fa-home"></i> Location Address
+                                 </label>
+                                 <input type="text" id="location" name="location_address" required placeholder="Enter complete address" autocomplete="street-address">
+                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group full-width">
@@ -394,14 +447,14 @@ if (!$clients) {
                                     <label for="contractStartDate">
                                         <i class="fas fa-play-circle"></i> Contract Start Date
                                     </label>
-                                    <input type="date" id="contractStartDate" name="contract_start_date">
-                                    <small class="form-hint">When services begin</small>
-                                </div>
-                                <div class="form-group half-width">
-                                    <label for="contractEndDate">
-                                        <i class="fas fa-stop-circle"></i> Contract End Date
-                                    </label>
-                                    <input type="date" id="contractEndDate" name="contract_end_date">
+                                     <input type="date" id="contractStartDate" name="contract_start_date" autocomplete="on">
+                                     <small class="form-hint">When services begin</small>
+                                 </div>
+                                 <div class="form-group half-width">
+                                     <label for="contractEndDate">
+                                         <i class="fas fa-stop-circle"></i> Contract End Date
+                                     </label>
+                                     <input type="date" id="contractEndDate" name="contract_end_date" autocomplete="on">
                                     <small class="form-hint">When services conclude</small>
                                 </div>
                             </div>
@@ -447,48 +500,48 @@ if (!$clients) {
                     <div class="form-section">
                         <h4><i class="fas fa-id-card"></i> Personal Information</h4>
                         <div class="form-row">
-                            <div class="form-group half-width">
-                                <label for="editFirstName">
-                                    <i class="fas fa-user"></i> First Name
-                                </label>
-                                <input type="text" id="editFirstName" name="first_name" required placeholder="Enter first name">
-                            </div>
-                            <div class="form-group half-width">
-                                <label for="editLastName">
-                                    <i class="fas fa-user"></i> Last Name
-                                </label>
-                                <input type="text" id="editLastName" name="last_name" required placeholder="Enter last name">
-                            </div>
+                             <div class="form-group half-width">
+                                 <label for="editFirstName">
+                                     <i class="fas fa-user"></i> First Name
+                                 </label>
+                                 <input type="text" id="editFirstName" name="first_name" required placeholder="Enter first name" autocomplete="given-name">
+                             </div>
+                             <div class="form-group half-width">
+                                 <label for="editLastName">
+                                     <i class="fas fa-user"></i> Last Name
+                                 </label>
+                                 <input type="text" id="editLastName" name="last_name" required placeholder="Enter last name" autocomplete="family-name">
+                             </div>
                         </div>
                     </div>
 
                     <div class="form-section">
                         <h4><i class="fas fa-address-book"></i> Contact Information</h4>
                         <div class="form-row">
-                            <div class="form-group half-width">
-                                <label for="editEmail">
-                                    <i class="fas fa-envelope"></i> Email Address
-                                </label>
-                                <input type="email" id="editEmail" name="email" required placeholder="client@example.com">
-                            </div>
-                            <div class="form-group half-width">
-                                <label for="editContact">
-                                    <i class="fas fa-phone"></i> Contact Number
-                                </label>
-                                <input type="text" id="editContact" name="contact_number" required placeholder="+1 (555) 123-4567">
-                            </div>
+                             <div class="form-group half-width">
+                                 <label for="editEmail">
+                                     <i class="fas fa-envelope"></i> Email Address
+                                 </label>
+                                 <input type="email" id="editEmail" name="email" required placeholder="client@example.com" autocomplete="email">
+                             </div>
+                             <div class="form-group half-width">
+                                 <label for="editContact">
+                                     <i class="fas fa-phone"></i> Contact Number
+                                 </label>
+                                 <input type="text" id="editContact" name="contact_number" required placeholder="+1 (555) 123-4567" autocomplete="tel">
+                             </div>
                         </div>
                     </div>
 
                     <div class="form-section">
                         <h4><i class="fas fa-map-marker-alt"></i> Location Details</h4>
                         <div class="form-row">
-                            <div class="form-group full-width">
-                                <label for="editLocation">
-                                    <i class="fas fa-home"></i> Location Address
-                                </label>
-                                <input type="text" id="editLocation" name="location_address" required placeholder="Enter complete address">
-                            </div>
+                             <div class="form-group full-width">
+                                 <label for="editLocation">
+                                     <i class="fas fa-home"></i> Location Address
+                                 </label>
+                                 <input type="text" id="editLocation" name="location_address" required placeholder="Enter complete address" autocomplete="street-address">
+                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group full-width">
@@ -548,18 +601,18 @@ if (!$clients) {
                             </div>
                         </div>
                         <div class="form-row">
-                            <div class="form-group half-width">
-                                <label for="contractStartDate">
-                                    <i class="fas fa-play-circle"></i> Start Date
-                                </label>
-                                <input type="date" id="contractStartDate" name="contract_start_date" required>
-                                <small class="form-hint">When services begin</small>
-                            </div>
-                            <div class="form-group half-width">
-                                <label for="contractEndDate">
-                                    <i class="fas fa-stop-circle"></i> End Date
-                                </label>
-                                <input type="date" id="contractEndDate" name="contract_end_date" required>
+                             <div class="form-group half-width">
+                                 <label for="contractStartDate">
+                                     <i class="fas fa-play-circle"></i> Start Date
+                                 </label>
+                                 <input type="date" id="contractStartDate" name="contract_start_date" required autocomplete="on">
+                                 <small class="form-hint">When services begin</small>
+                             </div>
+                             <div class="form-group half-width">
+                                 <label for="contractEndDate">
+                                     <i class="fas fa-stop-circle"></i> End Date
+                                 </label>
+                                 <input type="date" id="contractEndDate" name="contract_end_date" required autocomplete="on">
                                 <small class="form-hint">When services conclude</small>
                             </div>
                         </div>
@@ -624,32 +677,85 @@ if (!$clients) {
                 $('.sidebar').toggleClass('active');
             });
 
-            // Initialize client search functionality
-            $('#clientSearch').on('keyup', function() {
-                const searchValue = $(this).val().toLowerCase().trim();
+            // Function to update table visibility based on search and filter
+            function updateTableVisibility() {
+                const searchValue = $('#clientSearch').val().toLowerCase().trim();
+                const filterValue = $('#statusFilter').val();
                 $('.clients-table tbody tr').each(function() {
-                    const clientId = $(this).find('td:nth-child(1)').text().toLowerCase();
-                    const clientName = $(this).find('td:nth-child(2)').text().toLowerCase();
-                    const clientEmail = $(this).find('td:nth-child(3)').text().toLowerCase();
-                    const clientContact = $(this).find('td:nth-child(4)').text().toLowerCase();
-                    const clientLocation = $(this).find('td:nth-child(5)').text().toLowerCase();
-                    const clientTypeOfPlace = $(this).find('td:nth-child(6)').text().toLowerCase();
-                    const clientRegistered = $(this).find('td:nth-child(7)').text().toLowerCase();
-                    const clientContractStatus = $(this).find('td:nth-child(8)').text().toLowerCase();
+                    const row = $(this);
+                    const clientId = row.find('td:nth-child(1)').text().toLowerCase();
+                    const clientName = row.find('td:nth-child(2)').text().toLowerCase();
+                    const clientEmail = row.find('td:nth-child(3)').text().toLowerCase();
+                    const clientContact = row.find('td:nth-child(4)').text().toLowerCase();
+                    const clientLocation = row.find('td:nth-child(5)').text().toLowerCase();
+                    const clientTypeOfPlace = row.find('td:nth-child(6)').text().toLowerCase();
+                    const clientRegistered = row.find('td:nth-child(7)').text().toLowerCase();
+                    const clientContractStatus = row.find('td:nth-child(8)').text().toLowerCase();
 
-                    if (clientId.includes(searchValue) ||
+                    const matchesSearch = clientId.includes(searchValue) ||
                         clientName.includes(searchValue) ||
                         clientEmail.includes(searchValue) ||
                         clientContact.includes(searchValue) ||
                         clientLocation.includes(searchValue) ||
                         clientTypeOfPlace.includes(searchValue) ||
                         clientRegistered.includes(searchValue) ||
-                        clientContractStatus.includes(searchValue)) {
-                        $(this).show();
+                        clientContractStatus.includes(searchValue);
+
+                    const matchesFilter = filterValue === 'all' || row.data('status') === filterValue;
+
+                    if (matchesSearch && matchesFilter) {
+                        row.show();
                     } else {
-                        $(this).hide();
+                        row.hide();
                     }
                 });
+            }
+
+            var currentSort = { column: '', direction: 'asc' };
+
+            // Initialize client search functionality
+            $('#clientSearch').on('keyup', updateTableVisibility);
+
+            // Initialize status filter
+            $('#statusFilter').on('change', updateTableVisibility);
+
+            // Initialize sorting
+            $('.sortable').on('click', function() {
+                const column = $(this).data('column');
+                if (currentSort.column === column) {
+                    currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                } else {
+                    currentSort.column = column;
+                    currentSort.direction = 'asc';
+                }
+
+                // Update sort icons
+                $('.sort-icon').removeClass('fa-sort-up fa-sort-down').addClass('fa-sort');
+                $(this).find('.sort-icon').removeClass('fa-sort').addClass(currentSort.direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down');
+
+                // Sort the rows
+                const tbody = $('.clients-table tbody');
+                const rows = tbody.find('tr').toArray().sort(function(a, b) {
+                    const aVal = $(a).data(column);
+                    const bVal = $(b).data(column);
+                    let cmp = 0;
+
+                    if (column === 'client_id') {
+                        cmp = parseInt(aVal) - parseInt(bVal);
+                    } else if (column === 'registered_at' || column === 'contract_end_date') {
+                        if (!aVal && !bVal) cmp = 0;
+                        else if (!aVal) cmp = 1; // empty comes after
+                        else if (!bVal) cmp = -1; // empty comes after
+                        else cmp = new Date(aVal) - new Date(bVal);
+                    } else {
+                        cmp = String(aVal).localeCompare(String(bVal));
+                    }
+
+                    return currentSort.direction === 'asc' ? cmp : -cmp;
+                });
+
+                tbody.append(rows);
+                updateTableVisibility();
             });
 
             // Add Client Modal

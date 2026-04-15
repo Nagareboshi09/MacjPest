@@ -26,6 +26,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $_SESSION['user_id'] = $staff['staff_id'];
         $_SESSION['role'] = 'office_staff';
         $_SESSION['username'] = $staff['username']; // Added username
+
+        // Update last login time
+        $update_login = $conn->prepare("UPDATE office_staff SET last_login = NOW() WHERE staff_id = ?");
+        $update_login->bind_param("i", $staff['staff_id']);
+        $update_login->execute();
+
         header("Location: ../Admin Side/chemical_inventory.php");
         exit;
     }
