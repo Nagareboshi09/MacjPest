@@ -675,9 +675,9 @@ $completion_percentage = 0; // 0% since the job is not completed
 
         /* Chemicals Content Styles */
         .chemicals-content {
-          padding: 0px 20px 20px 20px;
+          padding: 10px 20px 20px 20px;
           flex: 1;
-          margin-top: var(--header-height);
+          margin-top: 20px;
         }
 
         .chemicals-header {
@@ -1233,6 +1233,23 @@ $completion_percentage = 0; // 0% since the job is not completed
                     <h1><i class="fas fa-chart-line"></i> Dashboard</h1>
                 </div>
 
+                <!-- Calendar Row -->
+                <div class="dashboard-row">
+                    <div class="dashboard-card" style="width: 100%; position: relative; overflow: hidden;">
+                        <div class="card-header" style="background: #3B82F6; color: white; border-radius: 12px 12px 0 0;">
+                            <h3 style="margin: 0; display: flex; align-items: center; font-size: 18px;">
+                                <i class="fas fa-calendar-alt" style="margin-right: 10px;"></i>
+                                Calendar
+                            </h3>
+                        </div>
+                        <div class="card-body" style="padding: 20px;">
+                             <h3 id="yearDisplay" aria-live="polite">Calendar for <?php echo date('Y'); ?></h3>
+                            <div id="holidayCalendar" style="height: 500px; border-radius: 8px; overflow: hidden;"></div>
+                        </div>
+                    </div>
+                </div>
+
+
 
                 <!-- Top Row Cards -->
                 <div class="dashboard-row">
@@ -1373,21 +1390,7 @@ $completion_percentage = 0; // 0% since the job is not completed
                     </div>
                 </div>
 
-                <!-- Calendar Row -->
-                <div class="dashboard-row">
-                    <div class="dashboard-card" style="width: 100%; position: relative; overflow: hidden;">
-                        <div class="card-header" style="background: #3B82F6; color: white; border-radius: 12px 12px 0 0;">
-                            <h3 style="margin: 0; display: flex; align-items: center; font-size: 18px;">
-                                <i class="fas fa-calendar-alt" style="margin-right: 10px;"></i>
-                                Calendar
-                            </h3>
-                        </div>
-                        <div class="card-body" style="padding: 20px;">
-                             <h3 id="yearDisplay" aria-live="polite">Calendar for <?php echo date('Y'); ?></h3>
-                            <div id="holidayCalendar" style="height: 500px; border-radius: 8px; overflow: hidden;"></div>
-                        </div>
-                    </div>
-                </div>
+
 
             </div>
         </main>

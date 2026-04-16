@@ -328,9 +328,6 @@ try {
                 <div class="chemicals-header">
                     <h1><i class="fas fa-flask"></i> Chemical Inventory</h1>
                     <div class="action-buttons">
-                        <a href="chemical_usage_log.php" class="btn btn-secondary">
-                            <i class="fas fa-history"></i> Usage Log
-                        </a>
                         <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#chemicalModal">
                             <i class="fas fa-plus"></i> Add New Chemical
                         </button>
