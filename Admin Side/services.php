@@ -11,15 +11,15 @@ try {
     $result = $conn->query("SHOW TABLES LIKE 'services'");
     if ($result->num_rows == 0) {
         // Table doesn't exist, create it
-        $sql = file_get_contents('../macjpest.sql');
-        if ($conn->multi_query($sql)) {
-            do {
-                // Process each result set
-                if ($result = $conn->store_result()) {
-                    $result->free();
-                }
-            } while ($conn->more_results() && $conn->next_result());
-        } else {
+        $sql = "CREATE TABLE IF NOT EXISTS services (
+            service_id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            description TEXT,
+            status ENUM('active', 'inactive') DEFAULT 'active',
+            icon VARCHAR(100),
+            image VARCHAR(255)
+        )";
+        if (!$conn->query($sql)) {
             echo '<div class="alert alert-danger">Error creating services table: ' . $conn->error . '</div>';
         }
     } else {
