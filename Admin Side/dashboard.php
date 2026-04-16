@@ -72,6 +72,11 @@ $sql_new_clients = "SELECT COUNT(*) AS new_clients FROM clients
 $result_new_clients = $conn->query($sql_new_clients);
 $new_clients = $result_new_clients->fetch_assoc()['new_clients'];
 
+// Expired Contracts
+$expiredContractsQuery = "SELECT COUNT(*) as total FROM clients WHERE contract_end_date IS NOT NULL AND contract_end_date < CURDATE()";
+$expiredContractsResult = $conn->query($expiredContractsQuery);
+$expired_contracts = $expiredContractsResult->fetch_assoc()['total'];
+
 // Pending Appointments
 $sql_pending = "SELECT COUNT(*) AS pending_appointments FROM appointments WHERE status = 'assigned'";
 $result_pending = $conn->query($sql_pending);
@@ -1084,6 +1089,16 @@ $completion_percentage = 0; // 0% since the job is not completed
             padding: 8px;
         }
 
+        /* Remove hover effects */
+        #holidayCalendar .fc-daygrid-day:hover {
+            background-color: transparent !important;
+        }
+
+        #holidayCalendar .fc-daygrid-day:hover .fc-daygrid-day-number {
+            background-color: transparent !important;
+            color: #374151 !important;
+        }
+
         /* Year display styling */
         #yearDisplay {
             font-size: 20px;
@@ -1286,6 +1301,25 @@ $completion_percentage = 0; // 0% since the job is not completed
                             <div class="card-chart">
                                 <div class="progress-circle" data-value="<?php echo min(100, round(($total_clients / 100) * 100)); ?>">
                                     <span class="progress-circle-value"><?php echo $total_clients; ?></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Expired Contracts Card -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-exclamation-triangle"></i> Expired Contracts</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="card-value"><?php echo $expired_contracts; ?></div>
+                            <div class="card-trend warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Contracts that have expired
+                            </div>
+                            <div class="card-chart">
+                                <div class="progress-circle" data-value="<?php echo min(100, round(($expired_contracts / 100) * 100)); ?>">
+                                    <span class="progress-circle-value"><?php echo $expired_contracts; ?></span>
                                 </div>
                             </div>
                         </div>

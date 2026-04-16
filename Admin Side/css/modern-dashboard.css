@@ -135,10 +135,11 @@
   flex-direction: column;
 }
 
-.dashboard-card:hover {
+/* Hover effects removed */
+/* .dashboard-card:hover {
   transform: translateY(-5px);
   box-shadow: var(--shadow-lg);
-}
+} */
 
 .wide-card {
   grid-column: 1 / -1;
