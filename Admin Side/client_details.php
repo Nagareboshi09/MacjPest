@@ -5,7 +5,6 @@ if ($_SESSION['role'] !== 'office_staff') {
     exit;
 }
 include '../db_connect.php';
-include '../notification_functions.php';
 
 // Check if client_id is provided
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
@@ -153,7 +152,6 @@ foreach ($jobOrders as $jobOrder) {
     <link rel="stylesheet" href="css/admin-base.css">
     <link rel="stylesheet" href="css/technicians-page.css">
     <link rel="stylesheet" href="css/technician-jobs.css">
-    <link rel="stylesheet" href="../css/notifications.css">
     <style>
         /* Client details specific styles */
         .client-details-content {
@@ -559,22 +557,7 @@ foreach ($jobOrders as $jobOrder) {
             <h1>Admin Dashboard</h1>
         </div>
         <div class="user-menu">
-            <!-- Notification Icon -->
-            <div class="notification-container">
-                <i class="fas fa-bell notification-icon"></i>
-                <span class="notification-badge" style="display: none;">0</span>
 
-                <!-- Notification Dropdown -->
-                <div class="notification-dropdown">
-                    <div class="notification-header">
-                        <h3>Notifications</h3>
-                        <span class="mark-all-read">Mark all as read</span>
-                    </div>
-                    <ul class="notification-list">
-                        <!-- Notifications will be loaded here -->
-                    </ul>
-                </div>
-            </div>
 
             <div class="user-info">
                 <div>
@@ -1282,25 +1265,6 @@ foreach ($jobOrders as $jobOrder) {
     });
     </script>
 
-    <!-- Notification Scripts -->
-    <script src="js/notifications.js"></script>
 
-    <!-- Notification Scripts -->
-    <script src="js/notifications.js"></script>
-    <script src="js/chemical-notifications.js"></script>
-    <script>
-        // Initialize notifications when the page loads
-        $(document).ready(function() {
-            // Fetch notifications immediately
-            if (typeof fetchNotifications === 'function') {
-                fetchNotifications();
-
-                // Set up periodic notification checks
-                setInterval(fetchNotifications, 60000); // Check every minute
-            } else {
-                console.error("fetchNotifications function not found");
-            }
-        });
-    </script>
 </body>
 </html>

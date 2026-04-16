@@ -10,7 +10,6 @@ if ($_SESSION['role'] !== 'office_staff') {
 }
 
 require_once '../db_connect.php';
-require_once '../notification_functions.php';
 
 // Set content type to JSON for all responses
 header('Content-Type: application/json');
@@ -217,69 +216,12 @@ try {
                     throw new Exception("Failed to add technician to appointment_technicians: " . $techAssignStmt->error);
                 }
 
-                // Notify technician about the assignment
-                notifyTechnicianAboutAssignment(
-                    $technician_id,
-                    $appointment_id,
-                    $client_name,
-                    $date,
-                    $time,
-                    $location
-                );
-
                 error_log("Automatically assigned technician ID: $technician_id ($technician_name) to appointment ID: $appointment_id");
             }
         }
     }
 
-    // Get client information for notification
-    $clientStmt = $conn->prepare("SELECT client_id, client_name, preferred_date, preferred_time FROM appointments WHERE appointment_id = ?");
-    $clientStmt->bind_param("i", $appointment_id);
-    $clientStmt->execute();
-    $result = $clientStmt->get_result();
 
-    if ($client = $result->fetch_assoc()) {
-        $client_id = $client['client_id'];
-        $client_name = $client['client_name'];
-        $preferred_date = $client['preferred_date'];
-        $preferred_time = $client['preferred_time'];
-
-        // Create notification for client
-        $notification_title = $status === 'accepted' ?
-            'Appointment Accepted' :
-            'Appointment Declined';
-
-        // Check if a technician was assigned for accepted appointments
-        $technicianName = '';
-        if ($status === 'accepted') {
-            $techStmt = $conn->prepare("SELECT t.tech_fname, t.tech_lname FROM technicians t
-                                        JOIN appointments a ON t.technician_id = a.technician_id
-                                        WHERE a.appointment_id = ?");
-            $techStmt->bind_param("i", $appointment_id);
-            $techStmt->execute();
-            $techResult = $techStmt->get_result();
-
-            if ($techRow = $techResult->fetch_assoc()) {
-                $technicianName = $techRow['tech_fname'] . ' ' . $techRow['tech_lname'];
-            }
-        }
-
-        $notification_message = $status === 'accepted' ?
-            ($technicianName ?
-                "Your appointment on $preferred_date at $preferred_time has been accepted. Technician $technicianName has been assigned to your appointment." :
-                "Your appointment on $preferred_date at $preferred_time has been accepted. A technician will be assigned based on availability."
-            ) :
-            "Your appointment on $preferred_date at $preferred_time has been declined. Please note that declined appointments cannot be rescheduled. You will need to create a new appointment if needed.";
-
-        // Insert notification
-        $notifyStmt = $conn->prepare("INSERT INTO notifications (user_id, user_type, title, message, related_id, related_type, created_at, is_read) VALUES (?, 'client', ?, ?, ?, 'appointment', NOW(), 0)");
-        $notifyStmt->bind_param("issi", $client_id, $notification_title, $notification_message, $appointment_id);
-
-        if (!$notifyStmt->execute()) {
-            error_log("Failed to create notification: " . $notifyStmt->error);
-            // Continue execution even if notification fails
-        }
-    }
 
     // Commit transaction
     $conn->commit();

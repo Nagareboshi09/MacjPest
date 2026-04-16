@@ -5,7 +5,6 @@ if ($_SESSION['role'] !== 'office_staff') {
     exit;
 }
 require_once '../db_connect.php';
-require_once '../notification_functions.php';
 
 // Get admin profile information
 $staff_id = $_SESSION['user_id'];
@@ -251,10 +250,7 @@ $profile_picture_url = !empty($admin['profile_picture'])
     <title>Admin Profile - MacJ Pest Control</title>
     <link rel="stylesheet" href="css/profile-page.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../css/notifications.css">
     <link rel="stylesheet" href="css/modern-modal.css">
-    <link rel="stylesheet" href="css/notification-override.css">
-    <link rel="stylesheet" href="css/notification-viewed.css">
 
 </head>
 <body>
@@ -264,22 +260,7 @@ $profile_picture_url = !empty($admin['profile_picture'])
             <h1>Admin Dashboard</h1>
         </div>
         <div class="user-menu">
-            <!-- Notification Icon -->
-            <div class="notification-container">
-                <i class="fas fa-bell notification-icon"></i>
-                <span class="notification-badge" style="display: none;">0</span>
 
-                <!-- Notification Dropdown -->
-                <div class="notification-dropdown">
-                    <div class="notification-header">
-                        <h3>Notifications</h3>
-                        <span class="mark-all-read">Mark all as read</span>
-                    </div>
-                    <ul class="notification-list">
-                        <!-- Notifications will be loaded here -->
-                    </ul>
-                </div>
-            </div>
 
             <div class="user-info">
                 <img src="<?php echo htmlspecialchars($profile_picture_url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>" alt="Profile" class="user-avatar" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
@@ -793,20 +774,10 @@ $profile_picture_url = !empty($admin['profile_picture'])
                 }
             });
 
-            // Fetch notifications immediately
-            if (typeof fetchNotifications === 'function') {
-                fetchNotifications();
 
-                // Set up periodic notification checks
-                setInterval(fetchNotifications, 60000); // Check every minute
-            } else {
-                console.error("fetchNotifications function not found");
-            }
         });
     </script>
 
-    <!-- Notification Scripts -->
-    <script src="js/notifications.js"></script>
-    <script src="js/chemical-notifications.js"></script>
+
 </body>
 </html>

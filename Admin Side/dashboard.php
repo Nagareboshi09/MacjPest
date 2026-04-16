@@ -5,7 +5,6 @@ if ($_SESSION['role'] !== 'office_staff') {
     exit;
 }
 require_once '../db_connect.php';
-require_once '../notification_functions.php';
 
 // Get Dashboard Metrics
 // Weekly Sales (Total cost from job orders this week)
@@ -359,10 +358,7 @@ $completion_percentage = 0; // 0% since the job is not completed
     <title>Admin Dashboard | MacJ Pest Control</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/modern-dashboard.css">
-    <link rel="stylesheet" href="../css/notifications.css">
     <link rel="stylesheet" href="css/modern-modal.css">
-    <link rel="stylesheet" href="css/notification-override.css">
-    <link rel="stylesheet" href="css/notification-viewed.css">
 
     <!-- Leaflet Map CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous" />
@@ -514,53 +510,7 @@ $completion_percentage = 0; // 0% since the job is not completed
         }
     </style>
     <style>
-        /* Additional notification styles for Admin Side */
-        .notification-container {
-            position: relative;
-            margin-right: 20px;
-            cursor: pointer;
-        }
 
-        .notification-icon {
-            font-size: 1.5rem;
-            color: var(--primary-color);
-            transition: color 0.3s ease;
-        }
-
-        .notification-badge {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background-color: #e74c3c;
-            color: white;
-            font-size: 0.75rem;
-            font-weight: bold;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .notification-dropdown {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            width: 350px;
-            max-height: 400px;
-            overflow-y: auto;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            z-index: 1000;
-            display: none;
-        }
-
-        .notification-dropdown.show {
-            display: block;
-        }
 
         .user-info {
             display: flex;
@@ -1220,22 +1170,7 @@ $completion_percentage = 0; // 0% since the job is not completed
             <h1>Admin Dashboard</h1>
         </div>
         <div class="user-menu">
-            <!-- Notification Icon -->
-            <div class="notification-container">
-                <i class="fas fa-bell notification-icon"></i>
-                <span class="notification-badge" style="display: none;">0</span>
 
-                <!-- Notification Dropdown -->
-                <div class="notification-dropdown">
-                    <div class="notification-header">
-                        <h3>Notifications</h3>
-                        <span class="mark-all-read">Mark all as read</span>
-                    </div>
-                    <ul class="notification-list">
-                        <!-- Notifications will be loaded here -->
-                    </ul>
-                </div>
-            </div>
 
             <div class="user-info">
                 <?php
@@ -1696,9 +1631,7 @@ $completion_percentage = 0; // 0% since the job is not completed
         });
     </script>
 
-    <!-- Notification Scripts -->
-    <script src="js/notifications.js"></script>
-    <script src="js/chemical-notifications.js"></script>
+
     <script>
         // Initialize charts and mobile menu when the page loads
         document.addEventListener('DOMContentLoaded', function() {
@@ -1717,13 +1650,7 @@ $completion_percentage = 0; // 0% since the job is not completed
                 });
             }
 
-            // Fetch notifications immediately
-            if (typeof fetchNotifications === 'function') {
-                fetchNotifications();
 
-                // Set up periodic notification checks
-                setInterval(fetchNotifications, 60000); // Check every minute
-            }
         });
     </script>
 

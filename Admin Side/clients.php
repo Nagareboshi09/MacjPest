@@ -5,7 +5,6 @@ if ($_SESSION['role'] !== 'office_staff') {
     exit;
 }
 require_once '../db_connect.php';
-require_once '../notification_functions.php';
 
 
 
@@ -61,7 +60,6 @@ if (!$clients) {
     <title>Client Management | MacJ Pest Control</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/clients-page.css">
-    <link rel="stylesheet" href="../css/notifications.css">
         <style>
         .user-info {
             display: flex;

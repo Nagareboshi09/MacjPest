@@ -7,7 +7,6 @@ if ($_SESSION['role'] !== 'office_staff') {
 }
 
 require_once '../db_connect.php';
-require_once '../notification_functions.php';
 
 header('Content-Type: application/json');
 
@@ -88,11 +87,6 @@ try {
         $stmt->execute();
     }
     
-    // Delete notifications related to the client
-    $stmt = $conn->prepare("DELETE FROM notifications WHERE user_id = ? AND user_type = 'client'");
-    $stmt->bind_param("i", $client_id);
-    $stmt->execute();
-    
     // Delete appointments
     $stmt = $conn->prepare("DELETE FROM appointments WHERE client_id = ?");
     $stmt->bind_param("i", $client_id);
@@ -105,17 +99,7 @@ try {
     
     // Commit transaction
     $conn->commit();
-    
-    // Create notification for admin
-    createNotification(
-        1, // Admin ID (assuming admin_id = 1)
-        'admin',
-        'Client Deleted',
-        "Client $client_name has been deleted from the system.",
-        null,
-        null
-    );
-    
+
     echo json_encode(['success' => true, 'message' => 'Client deleted successfully']);
     
 } catch (Exception $e) {

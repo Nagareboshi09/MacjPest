@@ -5,75 +5,11 @@ if ($_SESSION['role'] !== 'office_staff') {
     exit;
 }
 require_once '../db_config.php';
-require_once '../notification_functions.php';
-// Function to create notifications for expiring chemicals
-function createExpiringChemicalNotifications($pdo) {
-    try {
-        // Get all admin users from office_staff table
-        $adminStmt = $pdo->query("SELECT staff_id FROM office_staff");
-        $admins = $adminStmt->fetchAll(PDO::FETCH_COLUMN);
 
-        if (empty($admins)) {
-            // If no admins found, use the current user
-            $admins = [$_SESSION['user_id']];
-        }
-
-        // Get chemicals expiring within 30 days that haven't had notifications created yet
-        $stmt = $pdo->prepare("
-            SELECT c.id, c.chemical_name, c.expiration_date
-            FROM chemical_inventory c
-            WHERE c.expiration_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
-            AND NOT EXISTS (
-                SELECT 1 FROM notifications n
-                WHERE n.related_id = c.id
-                AND n.related_type = 'expiring_chemical'
-                AND DATE(n.created_at) = CURDATE()
-            )
-        ");
-
-        $stmt->execute();
-        $expiringChemicals = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // Create notifications for each admin about each expiring chemical
-        $notificationsCreated = 0;
-        foreach ($expiringChemicals as $chemical) {
-            $daysUntilExpiration = (new DateTime($chemical['expiration_date']))->diff(new DateTime())->days;
-            $title = "Chemical Expiring Soon";
-            $message = "{$chemical['chemical_name']} will expire in {$daysUntilExpiration} days (on " . date('M d, Y', strtotime($chemical['expiration_date'])) . ").";
-
-            foreach ($admins as $adminId) {
-                if (createNotification(
-                    $adminId,
-                    'admin',
-                    $title,
-                    $message,
-                    $chemical['id'],
-                    'expiring_chemical',
-                    $pdo
-                )) {
-                    $notificationsCreated++;
-                }
-            }
-        }
-
-        return $notificationsCreated;
-    } catch (PDOException $e) {
-        // Log the error but don't stop page execution
-        error_log("Error creating expiring chemical notifications: " . $e->getMessage());
-        return 0;
-    }
-}
 
 // Get Dashboard Metrics
 try {
-    // Check for expiring chemicals and create notifications
-    try {
-        $notificationsCreated = createExpiringChemicalNotifications($pdo);
-    } catch (Exception $e) {
-        // Log the error but continue with page execution
-        error_log("Error in chemical notification system: " . $e->getMessage());
-        $notificationsCreated = 0;
-    }
+
 
     // Total Chemicals
     $stmt = $pdo->query("SELECT COUNT(*) AS total FROM chemical_inventory");
@@ -209,10 +145,7 @@ try {
     <title>Chemical Inventory - MacJ Pest Control</title>
     <link rel="stylesheet" href="css/chemical-inventory-page.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../css/notifications.css">
     <link rel="stylesheet" href="css/modern-modal.css">
-    <link rel="stylesheet" href="css/notification-override.css">
-    <link rel="stylesheet" href="css/notification-viewed.css">
     <style>
         /* Action buttons in header */
         .action-buttons {
@@ -220,53 +153,7 @@ try {
             gap: 10px;
         }
 
-        /* Additional notification styles for Admin Side */
-        .notification-container {
-            position: relative;
-            margin-right: 20px;
-            cursor: pointer;
-        }
 
-        .notification-icon {
-            font-size: 1.5rem;
-            color: var(--primary-color);
-            transition: color 0.3s ease;
-        }
-
-        .notification-badge {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background-color: #e74c3c;
-            color: white;
-            font-size: 0.75rem;
-            font-weight: bold;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .notification-dropdown {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            width: 350px;
-            max-height: 400px;
-            overflow-y: auto;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            z-index: 1000;
-            display: none;
-        }
-
-        .notification-dropdown.show {
-            display: block;
-        }
 
         .user-info {
             display: flex;
@@ -283,45 +170,7 @@ try {
             color: var(--text-light);
         }
 
-        /* Chemical notification styles */
-        .notification-icon-wrapper {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background-color: rgba(59, 130, 246, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 10px;
-            flex-shrink: 0;
-        }
 
-        .notification-icon-wrapper.chemical-expiring {
-            background-color: #ffe6e6;
-        }
-
-        .notification-icon-wrapper.chemical-expiring i {
-            color: #cc0000;
-        }
-
-        .notification-item {
-            display: flex;
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
-            transition: background-color 0.2s;
-        }
-
-        .notification-item:hover {
-            background-color: #f9f9f9;
-        }
-
-        .notification-item.unread {
-            background-color: #f0f7ff;
-        }
-
-        .notification-item.unread:hover {
-            background-color: #e6f0ff;
-        }
 
         /* Expired Chemicals Alert Styles */
         .expired-chemicals-alert {
@@ -416,22 +265,7 @@ try {
             <h1>Admin Dashboard</h1>
         </div>
         <div class="user-menu">
-            <!-- Notification Icon -->
-            <div class="notification-container">
-                <i class="fas fa-bell notification-icon"></i>
-                <span class="notification-badge" style="display: none;">0</span>
 
-                <!-- Notification Dropdown -->
-                <div class="notification-dropdown">
-                    <div class="notification-header">
-                        <h3>Notifications</h3>
-                        <span class="mark-all-read">Mark all as read</span>
-                    </div>
-                    <ul class="notification-list">
-                        <!-- Notifications will be loaded here -->
-                    </ul>
-                </div>
-            </div>
 
             <div class="user-info">
                 <?php
@@ -1707,9 +1541,7 @@ try {
     });
     </script>
 
-    <!-- Notification Scripts -->
-    <script src="js/notifications.js"></script>
-    <script src="js/chemical-notifications.js"></script>
+
     <script>
         // Initialize mobile menu and notifications when the page loads
         $(document).ready(function() {
@@ -1718,15 +1550,7 @@ try {
                 $('.sidebar').toggleClass('active');
             });
 
-            // Fetch notifications immediately to show any expiring chemicals
-            if (typeof fetchNotifications === 'function') {
-                fetchNotifications();
 
-                // Set up periodic notification checks
-                setInterval(fetchNotifications, 60000); // Check every minute
-            } else {
-                console.error("fetchNotifications function not found");
-            }
         });
     </script>
 </body>
