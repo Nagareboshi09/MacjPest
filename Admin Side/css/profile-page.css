@@ -57,7 +57,8 @@
 }
 
 .profile-container {
-  max-width: 900px;
+  width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 30px;
   background-color: white;
@@ -235,19 +236,28 @@
 }
 
 .input-group {
-  display: flex;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  overflow: hidden;
+    display: flex;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: #fafafa;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.input-group:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.15);
+    background-color: white;
 }
 
 .input-group-text {
-  display: flex;
-  align-items: center;
-  padding: 10px 15px;
-  background-color: #f8f9fa;
-  border-right: 1px solid var(--border-color);
-  color: var(--text-light);
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-right: 2px solid var(--border-color);
+    color: var(--primary-color);
+    font-size: 16px;
 }
 
 .form-control {
@@ -270,26 +280,30 @@
 
 /* Password Section */
 .password-section {
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border-color);
+  margin-top: 40px;
+  padding-top: 30px;
+  border-top: 2px solid var(--border-color);
 }
 
 .password-section h4 {
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
   color: var(--text-color);
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .password-section h4 i {
-  margin-right: 10px;
+  margin-right: 12px;
   color: var(--primary-color);
+  font-size: 20px;
 }
 
 .password-section p {
-  margin-bottom: 20px;
-  font-size: 14px;
+  margin-bottom: 25px;
+  font-size: 15px;
+  color: var(--text-light);
 }
 
 /* Activity Tab */
@@ -568,26 +582,34 @@
 }
 
 .form-group {
-    margin-bottom: 25px;
+    margin-bottom: 30px;
+    position: relative;
 }
 
 .form-label {
-    font-weight: 500;
+    font-weight: 600;
     color: var(--dark-color);
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     display: block;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 .form-control {
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 12px 15px;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    background-color: #fafafa;
 }
 
 .form-control:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+    box-shadow: 0 0 0 0.3rem rgba(59, 130, 246, 0.15), 0 4px 8px rgba(59, 130, 246, 0.1);
+    background-color: white;
+    transform: translateY(-1px);
 }
 
 .form-text {
@@ -604,21 +626,26 @@
 }
 
 .btn-update {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    border: none;
     color: white;
-    padding: 12px 25px;
+    padding: 14px 30px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    transition: all 0.3s ease;
 }
 
 .btn-update:hover {
-    background-color: var(--primary-dark);
-    border-color: var(--primary-dark);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, var(--primary-dark), #1e40af);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
 }
 
 .btn-update:active {
-    transform: translateY(0);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
 }
 
 .btn-update i {
@@ -748,16 +775,35 @@
     color: var(--gray-color);
 }
 
+.password-toggle {
+  transition: all 0.3s ease;
+}
+
+.password-toggle:hover {
+  background-color: var(--primary-color) !important;
+  color: white !important;
+  transform: scale(1.1);
+}
+
 .btn-revoke {
-    background-color: var(--danger-color);
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    cursor: pointer;
+  background-color: var(--danger-color);
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
 .btn-revoke:hover {
-    background-color: #dc2626;
+  background-color: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+.btn-revoke:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

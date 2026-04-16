@@ -1448,15 +1448,7 @@ $completion_percentage = 0; // 0% since the job is not completed
                             </h3>
                         </div>
                         <div class="card-body" style="padding: 20px;">
-                            <h3 id="yearDisplay" aria-live="polite">Calendar for <?php echo date('Y'); ?></h3>
-                            <div style="margin-bottom: 15px; display: flex; justify-content: center; gap: 10px;">
-                                <button id="prevYearBtn" aria-label="Load holidays for the previous year">
-                                    <i class="fas fa-chevron-left" style="margin-right: 5px;"></i>Previous Year
-                                </button>
-                                <button id="nextYearBtn" aria-label="Load holidays for the next year">
-                                    Next Year<i class="fas fa-chevron-right" style="margin-left: 5px;"></i>
-                                </button>
-                            </div>
+                             <h3 id="yearDisplay" aria-live="polite">Calendar for <?php echo date('Y'); ?></h3>
                             <div id="holidayCalendar" style="height: 500px; border-radius: 8px; overflow: hidden;"></div>
                         </div>
                     </div>
@@ -1555,40 +1547,18 @@ $completion_percentage = 0; // 0% since the job is not completed
             let currentYear = <?php echo date('Y'); ?>;
             let calendar; // Keep reference to destroy previous instance
 
-            // Hardcoded holidays as fallback (for 2026 only)
-            const hardcodedHolidays = [
-                { title: "Araw ng Bagong Taon", start: "2026-01-01", allDay: true, backgroundColor: '#EF4444' },
-                { title: "Chinese New Year", start: "2026-02-17", allDay: true, backgroundColor: '#EF4444' },
-                { title: "Anibersaryo ng Rebolusyon sa EDSA", start: "2026-02-25", allDay: true, backgroundColor: '#EF4444' },
-                { title: "Eid'l Fitr", start: "2026-03-20", allDay: true, backgroundColor: '#EF4444' },
-                { title: "Huwebes Santo", start: "2026-04-02", allDay: true, backgroundColor: '#EF4444' },
-                { title: "Biyernes Santo", start: "2026-04-03", allDay: true, backgroundColor: '#EF4444' },
-                { title: "Sabado de Gloria", start: "2026-04-04", allDay: true, backgroundColor: '#EF4444' },
-                { title: "Araw ng Kagitingan", start: "2026-04-09", allDay: true, backgroundColor: '#EF4444' },
-                { title: "Araw ng Paggawa", start: "2026-05-01", allDay: true, backgroundColor: '#EF4444' },
-                { title: "Eid'l Adha", start: "2026-05-27", allDay: true, backgroundColor: '#EF4444' },
-                { title: "Araw ng Kalayaan", start: "2026-06-12", allDay: true, backgroundColor: '#EF4444' },
-                { title: "Araw ni Ninoy Aquino", start: "2026-08-21", allDay: true, backgroundColor: '#EF4444' },
-                { title: "Araw ng mga Bayani", start: "2026-08-31", allDay: true, backgroundColor: '#EF4444' },
-                { title: "Araw ng mga Santo", start: "2026-11-02", allDay: true, backgroundColor: '#EF4444' },
-                { title: "Araw ni Bonifacio", start: "2026-11-30", allDay: true, backgroundColor: '#EF4444' },
-                { title: "Pasko", start: "2026-12-25", allDay: true, backgroundColor: '#EF4444' },
-                { title: "Araw ni Rizal", start: "2026-12-30", allDay: true, backgroundColor: '#EF4444' },
-                { title: "Bisperas ng Bagong Taon", start: "2026-12-31", allDay: true, backgroundColor: '#EF4444' }
-            ];
-
             function loadHolidays(year) {
                 const calendarEl = document.getElementById('holidayCalendar');
                 calendarEl.innerHTML = '<div class="calendar-loading">Loading holidays...</div>';
 
-                const apiUrl = `https://tallyfy.com/national-holidays/api/PH/${year}.json`;
+                const apiUrl = `https://date.nager.at/api/v3/PublicHolidays/${year}/PH`;
                 fetch(apiUrl)
                     .then(response => response.json())
                     .then(data => {
                         console.log('API response:', data);
-                        const holidays = data.holidays.map(holiday => ({
-                            title: holiday.local_name,
-                            start: holiday.observed_date,
+                        const holidays = data.map(holiday => ({
+                            title: holiday.localName,
+                            start: holiday.date,
                             allDay: true,
                             backgroundColor: '#EF4444', // Red for holidays
                             borderColor: '#DC2626',
@@ -1598,8 +1568,8 @@ $completion_percentage = 0; // 0% since the job is not completed
                     })
                     .catch(error => {
                         console.error('Error fetching holidays:', error);
-                        console.log('Using hardcoded holidays');
-                        initializeCalendar(hardcodedHolidays);
+                        // Show error message instead of fallback
+                        calendarEl.innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Unable to load holidays. Please check your internet connection.</div>';
                     });
             }
 
@@ -1612,15 +1582,7 @@ $completion_percentage = 0; // 0% since the job is not completed
                     return;
                 }
 
-                // Add a test event (keep for current year, but adjust date if needed)
-                if (currentYear === 2026) {
-                    holidays.push({
-                        title: 'Test Holiday Today',
-                        start: '2026-04-15',
-                        allDay: true,
-                        backgroundColor: '#00FF00' // Green for test
-                    });
-                }
+
                 console.log('Initializing calendar with events:', holidays);
 
                 const calendarEl = document.getElementById('holidayCalendar');
@@ -1731,19 +1693,6 @@ $completion_percentage = 0; // 0% since the job is not completed
 
             // Load initial holidays
             loadHolidays(currentYear);
-
-            // Button event listeners
-            document.getElementById('prevYearBtn').addEventListener('click', function() {
-                currentYear--;
-                document.getElementById('yearDisplay').textContent = `Holidays for ${currentYear}`;
-                loadHolidays(currentYear);
-            });
-
-            document.getElementById('nextYearBtn').addEventListener('click', function() {
-                currentYear++;
-                document.getElementById('yearDisplay').textContent = `Holidays for ${currentYear}`;
-                loadHolidays(currentYear);
-            });
         });
     </script>
 
