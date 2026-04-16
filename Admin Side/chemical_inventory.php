@@ -15,12 +15,12 @@ try {
     $stmt = $pdo->query("SELECT COUNT(*) AS total FROM chemical_inventory");
     $total_chemicals = $stmt->fetchColumn();
 
-    // Low Stock (quantity < 10)
-    $stmt = $pdo->query("SELECT COUNT(*) AS low_stock FROM chemical_inventory WHERE status = 'Low Stock'");
+    // Low Stock (quantity < 10 and > 0)
+    $stmt = $pdo->query("SELECT COUNT(*) AS low_stock FROM chemical_inventory WHERE quantity < 10 AND quantity > 0");
     $low_stock = $stmt->fetchColumn();
 
     // Out of Stock
-    $stmt = $pdo->query("SELECT COUNT(*) AS out_of_stock FROM chemical_inventory WHERE status = 'Out of Stock'");
+    $stmt = $pdo->query("SELECT COUNT(*) AS out_of_stock FROM chemical_inventory WHERE quantity = 0");
     $out_of_stock = $stmt->fetchColumn();
 
     // Expiring within 30 days
@@ -29,18 +29,11 @@ try {
                          WHERE expiration_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 1 MONTH)");
     $expiring_soon = $stmt->fetchColumn();
 
-    // Expired chemicals
-    $stmt = $pdo->query("SELECT COUNT(*) AS expired
-                         FROM chemical_inventory
-                         WHERE expiration_date < CURDATE()");
-    $expired_count = $stmt->fetchColumn();
-
-    // Get list of expired chemicals
-    $stmt = $pdo->query("SELECT id, chemical_name, type, quantity, unit, expiration_date, status
-                         FROM chemical_inventory
-                         WHERE expiration_date < CURDATE()
-                         ORDER BY expiration_date ASC");
-    $expired_chemicals = $stmt->fetchAll(PDO::FETCH_ASSOC);
+     // Expired chemicals
+     $stmt = $pdo->query("SELECT COUNT(*) AS expired
+                          FROM chemical_inventory
+                          WHERE expiration_date < CURDATE()");
+     $expired_count = $stmt->fetchColumn();
 
 } catch (PDOException $e) {
     die("Database error: " . $e->getMessage());
@@ -87,9 +80,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// Get all chemicals
-try {
-    $baseQuery = "SELECT * FROM chemical_inventory";
+    // Get all chemicals
+    try {
+        $baseQuery = "SELECT *, CASE WHEN quantity = 0 THEN 'Out of Stock' WHEN quantity < 10 THEN 'Low Stock' ELSE 'In Stock' END AS status FROM chemical_inventory";
     $whereClauses = [];
     $params = [];
 
@@ -120,7 +113,7 @@ try {
     if (isset($_GET['sort']) && $_GET['sort'] === 'expiration') {
         $orderBy .= "expiration_date ASC";
     } else {
-        $orderBy .= "created_at DESC";
+        $orderBy .= "id DESC";
     }
 
     // Prepare final query
@@ -270,29 +263,32 @@ try {
             <div class="user-info">
                 <?php
                 // Check if profile picture exists
-                $staff_id = $_SESSION['user_id'];
-                $profile_picture = '';
+                $profile_picture_url = "../assets/default-profile.jpg";
+                if (isset($_SESSION['user_id'])) {
+                    $staff_id = $_SESSION['user_id'];
+                    $profile_picture = '';
 
-                // Check if the office_staff table has profile_picture column
-                try {
-                    $checkColumnStmt = $pdo->prepare("SHOW COLUMNS FROM office_staff LIKE 'profile_picture'");
-                    $checkColumnStmt->execute();
-                    if ($checkColumnStmt->rowCount() > 0) {
-                        $stmt = $pdo->prepare("SELECT profile_picture FROM office_staff WHERE staff_id = ?");
-                        $stmt->execute([$staff_id]);
-                        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-                        if ($row) {
-                            $profile_picture = $row['profile_picture'];
+                    // Check if the office_staff table has profile_picture column
+                    try {
+                        $checkColumnStmt = $pdo->prepare("SHOW COLUMNS FROM office_staff LIKE 'profile_picture'");
+                        $checkColumnStmt->execute();
+                        if ($checkColumnStmt->rowCount() > 0) {
+                            $stmt = $pdo->prepare("SELECT profile_picture FROM office_staff WHERE staff_id = ?");
+                            $stmt->execute([$staff_id]);
+                            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                            if ($row) {
+                                $profile_picture = $row['profile_picture'];
+                            }
                         }
+                    } catch (PDOException $e) {
+                        // Log error but continue
+                        error_log("Error fetching profile picture: " . $e->getMessage());
                     }
-                } catch (PDOException $e) {
-                    // Log error but continue
-                    error_log("Error fetching profile picture: " . $e->getMessage());
-                }
 
-                $profile_picture_url = !empty($profile_picture)
-                    ? "../uploads/admin/" . $profile_picture
-                    : "../assets/default-profile.jpg";
+                    $profile_picture_url = !empty($profile_picture)
+                        ? "../uploads/admin/" . $profile_picture
+                        : "../assets/default-profile.jpg";
+                }
                 ?>
                 <img src="<?php echo $profile_picture_url; ?>" alt="Profile" class="user-avatar" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;">
                 <div>
@@ -467,14 +463,17 @@ try {
                                     <td class="<?= $isExpired ? 'expired-date' : '' ?>">
                                         <?= date('M d, Y', strtotime($chemical['expiration_date'])) ?>
                                     </td>
-                                    <td>
-                                        <span class="status-badge <?= match($chemical['status']) {
-                                            'In Stock' => 'in-stock',
-                                            'Low Stock' => 'low-stock',
-                                            default => 'out-of-stock'
-                                        } ?>"><?= $chemical['status'] ?></span>
-                                    </td>
-                                    <td><?= date('M d, Y', strtotime($chemical['last_ordered'] ?? $chemical['created_at'])) ?></td>
+                                     <td>
+                                         <span class="status-badge <?= match($chemical['status']) {
+                                             'In Stock' => 'in-stock',
+                                             'Low Stock' => 'low-stock',
+                                             default => 'out-of-stock'
+                                         } ?>"><?= $chemical['status'] ?></span>
+                                     </td>
+                                     <td><?php
+                                         $lastOrdered = $chemical['last_ordered'] ?? $chemical['created_at'] ?? null;
+                                         echo $lastOrdered ? date('M d, Y', strtotime($lastOrdered)) : 'Not set';
+                                     ?></td>
                                     <td>
                                         <div class="action-buttons">
                                             <button class="btn-sm btn-info view-btn" data-id="<?= $chemical['id'] ?>">
@@ -632,24 +631,20 @@ try {
                                                             <div class="card-body">
                                                                 <h6><i class="fas fa-check-circle"></i> Calculation Results:</h6>
                                                                 <div id="manual_dilution_output"></div>
-                                                 </div>
-                                             </div>
-                                         </div>
-                                     </div>
-                                 </div>
-                                 <input type="hidden" name="dilution_rate" id="edit_hidden_dilution_rate">
-                                 <input type="hidden" name="area_coverage" id="edit_hidden_area_coverage">
-                                 <input type="hidden" name="manual_area" id="edit_hidden_manual_area">
-                                 <input type="hidden" name="manual_solution_rate" id="edit_hidden_manual_solution_rate">
-                                 <input type="hidden" name="manual_dilution_ratio" id="edit_hidden_manual_dilution_ratio">
-                             </div>
-                                     </div>
-                                 </div>
-                                 <input type="hidden" name="dilution_rate" id="hidden_dilution_rate">
-                                 <input type="hidden" name="area_coverage" id="hidden_area_coverage">
-                                 <input type="hidden" name="manual_area" id="hidden_manual_area">
-                                 <input type="hidden" name="manual_solution_rate" id="hidden_manual_solution_rate">
-                                 <input type="hidden" name="manual_dilution_ratio" id="hidden_manual_dilution_ratio">
+                                                             </div>
+                                                         </div>
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </div>
+                                  <input type="hidden" name="dilution_rate" id="hidden_dilution_rate">
+                                  <input type="hidden" name="area_coverage" id="hidden_area_coverage">
+                                  <input type="hidden" name="manual_area" id="hidden_manual_area">
+                                  <input type="hidden" name="manual_solution_rate" id="hidden_manual_solution_rate">
+                                  <input type="hidden" name="manual_dilution_ratio" id="hidden_manual_dilution_ratio">
+                              </div>
+                                      </div>
+                                  </div>
 
                              </div>
 
@@ -725,14 +720,14 @@ try {
                                     <div class="detail-label"><i class="fas fa-calendar-alt"></i> Expiration Date</div>
                                     <div class="detail-value" id="viewExpirationDate"></div>
                                 </div>
-                                <div class="detail-item">
-                                    <div class="detail-label"><i class="fas fa-ruler"></i> Unit</div>
-                                    <div class="detail-value" id="viewUnit"></div>
-                                </div>
-                            </div>
-                        </div>
+                                 <div class="detail-item">
+                                     <div class="detail-label"><i class="fas fa-ruler"></i> Unit</div>
+                                     <div class="detail-value" id="viewUnit"></div>
+                                 </div>
+                             </div>
+                         </div>
 
-                         <div class="detail-section">
+                             <div class="detail-section">
                              <h3><i class="fas fa-calculator"></i> Dilution Information</h3>
                              <div class="detail-grid">
                                  <div class="detail-item">
@@ -790,10 +785,15 @@ try {
                             <h5 class="modal-title"><i class="fas fa-edit"></i>Edit Chemical</h5>
                             <button type="button" class="close" data-dismiss="modal">&times;</button>
                         </div>
-                        <div class="modal-body edit-chemical-container">
-                            <input type="hidden" name="id" id="editChemicalId">
+                         <div class="modal-body edit-chemical-container">
+                             <input type="hidden" name="id" id="editChemicalId">
+                             <input type="hidden" name="dilution_rate" id="edit_hidden_dilution_rate">
+                             <input type="hidden" name="area_coverage" id="edit_hidden_area_coverage">
+                             <input type="hidden" name="manual_area" id="edit_hidden_manual_area">
+                             <input type="hidden" name="manual_solution_rate" id="edit_hidden_manual_solution_rate">
+                             <input type="hidden" name="manual_dilution_ratio" id="edit_hidden_manual_dilution_ratio">
 
-                            <div class="alert alert-info">
+                             <div class="alert alert-info">
                                 <i class="fas fa-info-circle"></i>
                                 <div>
                                     <strong>Note:</strong> All fields can now be updated. Make sure to review your changes before submitting.
@@ -1054,6 +1054,9 @@ try {
         $('#hidden_manual_area').val(area);
         $('#hidden_manual_solution_rate').val(solutionRate);
         $('#hidden_manual_dilution_ratio').val(ratioStr);
+
+        // Mark that calculation was performed
+        $('#chemicalForm').data('calculation-performed', true);
     }
 
     // Clear manual dilution calculator
@@ -1065,6 +1068,12 @@ try {
         $('#manual_dilution_output').html('');
         $('#hidden_dilution_rate').val('');
         $('#hidden_area_coverage').val('');
+        $('#hidden_manual_area').val('');
+        $('#hidden_manual_solution_rate').val('');
+        $('#hidden_manual_dilution_ratio').val('');
+
+        // Reset calculation flag
+        $('#chemicalForm').data('calculation-performed', false);
     }
 
         // Edit Modal Manual Dilution Calculator Function
@@ -1157,19 +1166,22 @@ try {
         $('#editChemicalForm').data('calculation-performed', true);
     }
 
-    // Clear edit modal manual dilution calculator
-    function clearEditManualDilution() {
-        $('#edit_manual_area').val('');
-        $('#edit_manual_solution_rate').val('');
-        $('#edit_manual_dilution_ratio').val('');
-        $('#edit_manual_dilution_result').hide();
-        $('#edit_manual_dilution_output').html('');
-        $('#edit_hidden_dilution_rate').val('');
-        $('#edit_hidden_area_coverage').val('');
+        // Clear edit modal manual dilution calculator
+        function clearEditManualDilution() {
+            $('#edit_manual_area').val('');
+            $('#edit_manual_solution_rate').val('');
+            $('#edit_manual_dilution_ratio').val('');
+            $('#edit_manual_dilution_result').hide();
+            $('#edit_manual_dilution_output').html('');
+            $('#edit_hidden_dilution_rate').val('');
+            $('#edit_hidden_area_coverage').val('');
+            $('#edit_hidden_manual_area').val('');
+            $('#edit_hidden_manual_solution_rate').val('');
+            $('#edit_hidden_manual_dilution_ratio').val('');
 
-        // Reset calculation flag
-        $('#editChemicalForm').data('calculation-performed', false);
-    }
+            // Reset calculation flag
+            $('#editChemicalForm').data('calculation-performed', false);
+        }
 
     $(document).ready(function() {
         // Set default values for common chemicals
@@ -1217,9 +1229,62 @@ try {
             clearEditManualDilution();
         });
 
+        // Clear hidden fields when inputs change to prevent stale data
+        $('#manual_area, #manual_solution_rate, #manual_dilution_ratio').on('input', function() {
+            $('#hidden_dilution_rate').val('');
+            $('#hidden_area_coverage').val('');
+            $('#hidden_manual_area').val('');
+            $('#hidden_manual_solution_rate').val('');
+            $('#hidden_manual_dilution_ratio').val('');
+            $('#chemicalForm').data('calculation-performed', false);
+            $('#manual_dilution_result').hide();
+        });
+
+        $('#edit_manual_area, #edit_manual_solution_rate, #edit_manual_dilution_ratio').on('input', function() {
+            $('#edit_hidden_dilution_rate').val('');
+            $('#edit_hidden_area_coverage').val('');
+            $('#edit_hidden_manual_area').val('');
+            $('#edit_hidden_manual_solution_rate').val('');
+            $('#edit_hidden_manual_dilution_ratio').val('');
+            $('#editChemicalForm').data('calculation-performed', false);
+            $('#edit_manual_dilution_result').hide();
+        });
+
         // Create new chemical
         $('#chemicalForm').submit(function(e) {
             e.preventDefault();
+
+            // Check if calculation was performed before allowing submission
+            if (!$('#chemicalForm').data('calculation-performed')) {
+                alert('Please perform a dilution calculation using the calculator before adding the chemical.');
+                return;
+            }
+
+            // Validate dilution calculation consistency
+            const currentArea = parseFloat($('#manual_area').val());
+            const currentSolutionRate = parseFloat($('#manual_solution_rate').val());
+            const currentRatioStr = $('#manual_dilution_ratio').val().trim();
+
+            if (currentArea && currentSolutionRate && currentRatioStr) {
+                // Recalculate expected values
+                const ratioParts = currentRatioStr.split(':');
+                const chemicalPart = parseFloat(ratioParts[0]);
+                const waterPart = parseFloat(ratioParts[1]);
+                const totalSolution = currentArea * currentSolutionRate;
+                const chemicalNeeded = (chemicalPart / waterPart) * totalSolution;
+                const expectedDilutionRate = (chemicalNeeded / totalSolution) * 1000;
+                const expectedAreaCoverage = currentArea / totalSolution;
+
+                const storedDilutionRate = parseFloat($('#hidden_dilution_rate').val());
+                const storedAreaCoverage = parseFloat($('#hidden_area_coverage').val());
+
+                if (Math.abs(expectedDilutionRate - storedDilutionRate) > 0.01 ||
+                    Math.abs(expectedAreaCoverage - storedAreaCoverage) > 0.01) {
+                    alert('The dilution calculation appears inconsistent with current inputs. Please recalculate using the calculator before submitting.');
+                    return;
+                }
+            }
+
             const formData = $(this).serialize();
 
             $.ajax({
@@ -1370,13 +1435,38 @@ try {
         // Update chemical
         $('#editChemicalForm').submit(function(e) {
             e.preventDefault();
-            
+
             // Check if calculation was performed before allowing submission
             if (!$('#editChemicalForm').data('calculation-performed')) {
                 alert('Please perform a dilution calculation using the calculator before updating the chemical information.');
                 return;
             }
-            
+
+            // Validate dilution calculation consistency
+            const currentArea = parseFloat($('#edit_manual_area').val());
+            const currentSolutionRate = parseFloat($('#edit_manual_solution_rate').val());
+            const currentRatioStr = $('#edit_manual_dilution_ratio').val().trim();
+
+            if (currentArea && currentSolutionRate && currentRatioStr) {
+                // Recalculate expected values
+                const ratioParts = currentRatioStr.split(':');
+                const chemicalPart = parseFloat(ratioParts[0]);
+                const waterPart = parseFloat(ratioParts[1]);
+                const totalSolution = currentArea * currentSolutionRate;
+                const chemicalNeeded = (chemicalPart / waterPart) * totalSolution;
+                const expectedDilutionRate = (chemicalNeeded / totalSolution) * 1000;
+                const expectedAreaCoverage = currentArea / totalSolution;
+
+                const storedDilutionRate = parseFloat($('#edit_hidden_dilution_rate').val());
+                const storedAreaCoverage = parseFloat($('#edit_hidden_area_coverage').val());
+
+                if (Math.abs(expectedDilutionRate - storedDilutionRate) > 0.01 ||
+                    Math.abs(expectedAreaCoverage - storedAreaCoverage) > 0.01) {
+                    alert('The dilution calculation appears inconsistent with current inputs. Please recalculate using the calculator before submitting.');
+                    return;
+                }
+            }
+
             if(confirm('Are you sure you want to update this chemical?')) {
                 const formData = {
                     id: $('#editChemicalId').val(),

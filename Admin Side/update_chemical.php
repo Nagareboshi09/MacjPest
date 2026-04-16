@@ -29,40 +29,42 @@ try {
     }
 
     $stmt = $pdo->prepare("UPDATE chemical_inventory
-                          SET chemical_name = ?,
-                              type = ?,
-                              target_pest = ?,
-                              quantity = ?,
-                              unit = ?,
-                              manufacturer = ?,
-                              supplier = ?,
-                              expiration_date = ?,
-                              description = ?,
-                              safety_info = ?,
-                              dilution_rate = ?,
-                              area_coverage = ?,
-                              manual_area = ?,
-                              manual_solution_rate = ?,
-                              manual_dilution_ratio = ?
-                          WHERE id = ?");
+                       SET chemical_name = ?,
+                           type = ?,
+                           target_pest = ?,
+                           quantity = ?,
+                           unit = ?,
+                           manufacturer = ?,
+                           supplier = ?,
+                           expiration_date = ?,
+                           description = ?,
+                           safety_info = ?,
+                           dilution_rate = ?,
+                           area_coverage = ?,
+                           manual_area = ?,
+                           manual_solution_rate = ?,
+                           manual_dilution_ratio = ?,
+                           status = ?
+                       WHERE id = ?");
 
     $stmt->execute([
-        $chemical_name,
-        $type,
-        $target_pest,
-        $quantity,
-        $unit,
-        $manufacturer,
-        $supplier,
-        $expiration_date,
-        $description,
-        $safety_info,
-        $dilution_rate,
-        $area_coverage,
-        $manual_area,
-        $manual_solution_rate,
-        $manual_dilution_ratio,
-        $chemicalId
+      $chemical_name,
+      $type,
+      $target_pest,
+      $quantity,
+      $unit,
+      $manufacturer,
+      $supplier,
+      $expiration_date,
+      $description,
+      $safety_info,
+      $dilution_rate,
+      $area_coverage,
+      $manual_area,
+      $manual_solution_rate,
+      $manual_dilution_ratio,
+      $status,
+      $chemicalId
     ]);
 
     // Activity logging temporarily disabled - admin_activity_logs table not found
