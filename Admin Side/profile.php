@@ -235,56 +235,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error_message = "New password and confirmation do not match.";
             } elseif (strlen($new_password) < 6) {
                 $error_message = "New password must be at least 6 characters long.";
-            } else {
-                $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-                $update_password = $conn->prepare("UPDATE office_staff SET password = ? WHERE staff_id = ?");
-                $update_password->bind_param("si", $hashed_password, $staff_id);
-                if ($update_password->execute()) {
-                    $success_message = "Password changed successfully!";
-                    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-                } else {
-                    $error_message = "Failed to change password: " . $conn->error;
-                }
-            }
-        } elseif (isset($_POST['create_account'])) {
-            $new_username = $conn->real_escape_string($_POST['new_username']);
-            $new_full_name = $conn->real_escape_string($_POST['new_full_name']);
-            $new_email = $conn->real_escape_string($_POST['new_email']);
-            $new_contact_number = $conn->real_escape_string($_POST['new_contact_number']);
-            $new_role = $conn->real_escape_string($_POST['new_role']);
-            $new_password = $_POST['new_password'];
+    } else {
+        $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+        $update_password = $conn->prepare("UPDATE office_staff SET password = ? WHERE staff_id = ?");
+        $update_password->bind_param("si", $hashed_password, $staff_id);
+        if ($update_password->execute()) {
+            $success_message = "Password changed successfully!";
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        } else {
+            $error_message = "Failed to change password: " . $conn->error;
+        }
+    }
+}
+elseif (isset($_POST['create_account'])) {
+                    $new_username = $conn->real_escape_string($_POST['new_username']);
+                    $new_full_name = $conn->real_escape_string($_POST['new_full_name']);
+                    $new_email = $conn->real_escape_string($_POST['new_email']);
+                    $new_contact_number = $conn->real_escape_string($_POST['new_contact_number']);
+                    $new_role = $conn->real_escape_string($_POST['new_role']);
+                    $new_password = $_POST['new_password'];
 
-            // Validate role
-            if (!in_array($new_role, ['office_staff', 'admin'])) {
-                $error_message = "Invalid role selected.";
-            } elseif (strlen($new_password) < 6) {
-                $error_message = "Password must be at least 6 characters long.";
-            } else {
-                // Check if username already exists
-                $check_username = $conn->prepare("SELECT staff_id FROM office_staff WHERE username = ?");
-                $check_username->bind_param("s", $new_username);
-                $check_username->execute();
-                $result = $check_username->get_result();
-
-                if ($result->num_rows > 0) {
-                    $error_message = "Username already exists. Please choose a different one.";
-                } else {
-                    // Hash password
-                    $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-
-                    // Insert new account
-                    $insert_stmt = $conn->prepare("INSERT INTO office_staff (username, password, full_name, email, contact_number, role, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
-                    $insert_stmt->bind_param("ssssss", $new_username, $hashed_password, $new_full_name, $new_email, $new_contact_number, $new_role);
-
-                    if ($insert_stmt->execute()) {
-                        $success_message = "Account created successfully!";
-                        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+                    // Validate role
+                    if (!in_array($new_role, ['office_staff', 'admin'])) {
+                        $error_message = "Invalid role selected.";
+                    } elseif (strlen($new_password) < 6) {
+                        $error_message = "Password must be at least 6 characters long.";
                     } else {
-                        $error_message = "Failed to create account: " . $conn->error;
+                        // Check if username already exists
+                        $check_username = $conn->prepare("SELECT staff_id FROM office_staff WHERE username = ?");
+                        $check_username->bind_param("s", $new_username);
+                        $check_username->execute();
+                        $result = $check_username->get_result();
+
+                        if ($result->num_rows > 0) {
+                            $error_message = "Username already exists. Please choose a different one.";
+                        } else {
+                            // Hash password
+                            $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+                            // Insert new account
+                            $insert_stmt = $conn->prepare("INSERT INTO office_staff (username, password, full_name, email, contact_number, role, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
+                            $insert_stmt->bind_param("ssssss", $new_username, $hashed_password, $new_full_name, $new_email, $new_contact_number, $new_role);
+                            if ($insert_stmt->execute()) {
+                                $success_message = "Account created successfully!";
+                                $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+                            } else {
+                                $error_message = "Failed to create account: " . $conn->error;
+                            }
+                        }
+                    }
+}
+elseif (isset($_POST['delete_account'])) {
+                    // Delete the account
+                    $delete_stmt = $conn->prepare("DELETE FROM office_staff WHERE staff_id = ?");
+                    $delete_stmt->bind_param("i", $staff_id);
+
+                    if ($delete_stmt->execute()) {
+                        // Account deleted successfully, destroy session and redirect to login
+                        session_destroy();
+                        header("Location: ../SignIn.php");
+                        exit;
+                    } else {
+                        $error_message = "Failed to delete account: " . $delete_stmt->error;
                     }
                 }
-            }
-        }
     }
 }
 
@@ -634,20 +647,35 @@ $profile_picture_url = !empty($admin['profile_picture'])
                                          </div>
                                      </div>
 
-                                     <div class="security-card">
-                                         <h4><i class="fas fa-desktop"></i> Active Sessions</h4>
-                                         <p class="text-muted">Manage your active login sessions</p>
+                                      <div class="security-card">
+                                          <h4><i class="fas fa-desktop"></i> Active Sessions</h4>
+                                          <p class="text-muted">Manage your active login sessions</p>
 
-                                         <div class="session-item">
-                                             <div class="session-info">
-                                                 <div class="session-device">Current Session</div>
-                                                  <div class="session-time"><?php echo date('F j, Y \a\t g:i A'); ?> - <?php echo htmlspecialchars($_SERVER['HTTP_USER_AGENT'] ?? 'Unknown Device', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></div>
-                                             </div>
-                                             <button class="btn-revoke" disabled>Current</button>
-                                         </div>
+                                          <div class="session-item">
+                                              <div class="session-info">
+                                                  <div class="session-device">Current Session</div>
+                                                   <div class="session-time"><?php echo date('F j, Y \a\t g:i A'); ?> - <?php echo htmlspecialchars($_SERVER['HTTP_USER_AGENT'] ?? 'Unknown Device', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></div>
+                                              </div>
+                                              <button class="btn-revoke" disabled>Current</button>
+                                          </div>
 
-                                         <p class="text-muted mt-3">Note: Only one session is currently supported. Enhanced session management will be available in future updates.</p>
-                                     </div>
+                                          <p class="text-muted mt-3">Note: Only one session is currently supported. Enhanced session management will be available in future updates.</p>
+                                      </div>
+
+                                      <div class="security-card danger">
+                                          <h4><i class="fas fa-exclamation-triangle"></i> Danger Zone</h4>
+                                          <p class="text-muted">Irreversible actions</p>
+
+                                          <div class="danger-action">
+                                              <div class="danger-info">
+                                                  <strong>Delete Account</strong>
+                                                  <p>Once you delete your account, there is no going back. Please be certain.</p>
+                                              </div>
+                                              <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                                                  <i class="fas fa-trash-alt"></i> Delete Account
+                                              </button>
+                                          </div>
+                                      </div>
                                  </div>
                              </div>
 
@@ -764,6 +792,34 @@ $profile_picture_url = !empty($admin['profile_picture'])
             </div>
         </div>
         <?php endif; ?>
+
+        <!-- Delete Account Modal -->
+        <div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteAccountModalLabel"><i class="fas fa-exclamation-triangle me-2"></i>Delete Account</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form method="POST" action="">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                        <div class="modal-body">
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Warning:</strong> This action cannot be undone. This will permanently delete your account and remove all associated data.
+                            </div>
+                            <p>Are you sure you want to delete your account? You will be logged out and redirected to the sign-in page.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" name="delete_account" class="btn btn-danger">
+                                <i class="fas fa-trash-alt me-1"></i>Yes, Delete My Account
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>

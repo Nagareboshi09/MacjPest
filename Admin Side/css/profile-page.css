@@ -807,3 +807,43 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.security-card.danger {
+  border: 2px solid var(--danger-color);
+  background-color: #fef2f2;
+}
+
+.security-card.danger h4 {
+  color: var(--danger-color);
+}
+
+.security-card.danger h4 i {
+  color: var(--danger-color);
+}
+
+.danger-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  margin-top: 15px;
+}
+
+.danger-info {
+  flex: 1;
+}
+
+.danger-info strong {
+  display: block;
+  color: var(--danger-color);
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+}
+
+.danger-info p {
+  margin: 0;
+  color: var(--text-light);
+}
