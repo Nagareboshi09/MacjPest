@@ -576,7 +576,7 @@ foreach ($jobOrders as $jobOrder) {
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li><a href="dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                    <li><a href="index.php"><i class="fas fa-chart-line"></i> Dashboard</a></li>
                     <li><a href="profile.php"><i class="fas fa-user-circle"></i> My Profile</a></li>
                     <li><a href="calendar.php"><i class="fas fa-calendar-alt"></i> Calendar</a></li>
                     <li><a href="assessment_report.php"><i class="fas fa-clipboard-check"></i> Assessment Report</a></li>

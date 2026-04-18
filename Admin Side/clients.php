@@ -115,7 +115,7 @@ if (!$clients) {
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li><a href="dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                    <li><a href="index.php"><i class="fas fa-chart-line"></i> Dashboard</a></li>
                     <li><a href="profile.php"><i class="fas fa-user-circle"></i> My Profile</a></li>
                     <li><a href="chemical_inventory.php"><i class="fas fa-flask"></i> Chemical Inventory</a></li>
                     <li><a href="services.php"><i class="fas fa-concierge-bell"></i> Services</a></li>

@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $update_login->bind_param("i", $staff['staff_id']);
         $update_login->execute();
 
-        header("Location: ../Admin Side/dashboard.php");
+        header("Location: ../Admin Side/index.php");
         exit;
     }
 
