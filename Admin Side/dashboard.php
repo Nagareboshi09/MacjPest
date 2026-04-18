@@ -1,6 +1,6 @@
 <?php
 session_start();
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'office_staff') {
+if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['office_staff', 'admin'])) {
     header("Location: ../SignIn.php");
     exit;
 }
@@ -203,21 +203,27 @@ while ($row = $result_low_quantity->fetch_assoc()) {
     $low_quantity_chemicals[] = $row;
 }
 
-// Near Expiration Chemicals
+// Near Expiration and Expired Chemicals
 $sql_near_expiration = "SELECT id, chemical_name, type, expiration_date, quantity, unit
                         FROM chemical_inventory
-                        WHERE expiration_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+                        WHERE expiration_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
                         AND quantity > 0
                         ORDER BY expiration_date ASC
                         LIMIT 5";
 $result_near_expiration = $conn->query($sql_near_expiration);
 $near_expiration_chemicals = [];
 while ($row = $result_near_expiration->fetch_assoc()) {
-    // Calculate days until expiration
     $today = new DateTime();
     $expiry = new DateTime($row['expiration_date']);
-    $interval = $today->diff($expiry);
-    $row['days_until_expiry'] = $interval->days;
+    if ($expiry > $today) {
+        $interval = $today->diff($expiry);
+        $row['days_until_expiry'] = $interval->days;
+        $row['status'] = 'expiring_soon';
+    } else {
+        $interval = $expiry->diff($today);
+        $row['days_until_expiry'] = $interval->days;
+        $row['status'] = 'expired';
+    }
     $near_expiration_chemicals[] = $row;
 }
 
@@ -1275,10 +1281,10 @@ $completion_percentage = 0; // 0% since the job is not completed
                         </div>
                         <div class="card-body">
                             <div class="card-value"><?php echo $total_chemicals; ?></div>
-                            <div class="card-trend warning">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                <?php echo $low_stock_count; ?> low stock, <?php echo $near_expiry_count; ?> expiring soon
-                            </div>
+                             <div class="card-trend warning">
+                                 <i class="fas fa-exclamation-triangle"></i>
+                                 <?php echo $low_stock_count; ?> low stock, <?php echo $near_expiry_count; ?> expiring/expired
+                             </div>
                             <div class="card-chart">
                                 <canvas id="chemicalChart" height="60"></canvas>
                             </div>
@@ -1380,23 +1386,23 @@ $completion_percentage = 0; // 0% since the job is not completed
                         </div>
                     </div>
 
-                    <!-- Near Expiration Chemicals Card -->
+                    <!-- Expiring & Expired Chemicals Card -->
                     <div class="dashboard-card">
                         <div class="card-header">
-                            <h3><i class="fas fa-calendar-times"></i> Near Expiration Chemicals</h3>
+                            <h3><i class="fas fa-calendar-times"></i> Expiring & Expired Chemicals</h3>
                         </div>
                         <div class="card-body">
                             <?php if (empty($near_expiration_chemicals)): ?>
                                 <div class="no-data">
                                     <i class="fas fa-check-circle" style="color: #10B981; font-size: 24px; margin-bottom: 10px;"></i>
-                                    <p>No chemicals expiring soon</p>
+                                    <p>No chemicals expiring or expired soon</p>
                                 </div>
                             <?php else: ?>
                                 <div class="chemical-list">
                                     <?php foreach ($near_expiration_chemicals as $chemical): ?>
                                         <div class="chemical-item">
-                                            <div class="chemical-icon" style="background-color: #EF4444;">
-                                                <i class="fas fa-hourglass-half"></i>
+                                            <div class="chemical-icon" style="background-color: <?php echo $chemical['status'] == 'expired' ? '#DC2626' : '#EF4444'; ?>;">
+                                                <i class="fas fa-<?php echo $chemical['status'] == 'expired' ? 'times-circle' : 'hourglass-half'; ?>"></i>
                                             </div>
                                             <div class="chemical-info">
                                                 <div class="chemical-name"><?php echo htmlspecialchars($chemical['chemical_name']); ?></div>
@@ -1407,8 +1413,12 @@ $completion_percentage = 0; // 0% since the job is not completed
                                                     </span>
                                                 </div>
                                                 <div class="chemical-expiry">
-                                                    <span class="expiry-badge">
-                                                        Expires in <?php echo $chemical['days_until_expiry']; ?> days
+                                                    <span class="expiry-badge" style="background-color: <?php echo $chemical['status'] == 'expired' ? 'rgba(220, 38, 38, 0.1); color: #DC2626;' : 'rgba(239, 68, 68, 0.1); color: #EF4444;'; ?>">
+                                                        <?php if ($chemical['status'] == 'expired'): ?>
+                                                            Expired <?php echo $chemical['days_until_expiry']; ?> days ago
+                                                        <?php else: ?>
+                                                            Expires in <?php echo $chemical['days_until_expiry']; ?> days
+                                                        <?php endif; ?>
                                                         (<?php echo date('M d, Y', strtotime($chemical['expiration_date'])); ?>)
                                                     </span>
                                                 </div>

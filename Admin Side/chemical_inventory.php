@@ -1,6 +1,6 @@
 <?php
 session_start();
-if ($_SESSION['role'] !== 'office_staff') {
+if (!in_array($_SESSION['role'] ?? '', ['office_staff', 'admin'])) {
     header("Location: SignIn.php");
     exit;
 }

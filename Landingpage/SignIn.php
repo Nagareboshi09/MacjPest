@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     if ($staff && password_verify($password, $staff['password'])) {
         $_SESSION['user_id'] = $staff['staff_id'];
-        $_SESSION['role'] = 'office_staff';
+        $_SESSION['role'] = $staff['role'] ?? 'office_staff';
         $_SESSION['username'] = $staff['username']; // Added username
 
         // Update last login time

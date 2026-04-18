@@ -1,6 +1,6 @@
 <?php
 session_start();
-if ($_SESSION['role'] !== 'office_staff') {
+if (!in_array($_SESSION['role'] ?? '', ['office_staff', 'admin'])) {
     header("Location: ../SignIn.php");
     exit;
 }
@@ -26,6 +26,12 @@ $hasProfilePicture = $result->num_rows > 0;
 $result = $conn->query("SHOW COLUMNS FROM office_staff LIKE 'last_login'");
 $hasLastLogin = $result->num_rows > 0;
 
+$result = $conn->query("SHOW COLUMNS FROM office_staff LIKE 'role'");
+$hasRole = $result->num_rows > 0;
+
+$result = $conn->query("SHOW COLUMNS FROM office_staff LIKE 'created_at'");
+$hasCreatedAt = $result->num_rows > 0;
+
 // Add missing columns if needed
 if (!$hasFullName) {
     $conn->query("ALTER TABLE office_staff ADD COLUMN full_name VARCHAR(100) DEFAULT NULL");
@@ -45,6 +51,14 @@ if (!$hasProfilePicture) {
 
 if (!$hasLastLogin) {
     $conn->query("ALTER TABLE office_staff ADD COLUMN last_login TIMESTAMP DEFAULT NULL");
+}
+
+if (!$hasRole) {
+    $conn->query("ALTER TABLE office_staff ADD COLUMN role VARCHAR(20) DEFAULT 'office_staff'");
+}
+
+if (!$hasCreatedAt) {
+    $conn->query("ALTER TABLE office_staff ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
 }
 
 // Get admin profile data
@@ -232,6 +246,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error_message = "Failed to change password: " . $conn->error;
                 }
             }
+        } elseif (isset($_POST['create_account'])) {
+            $new_username = $conn->real_escape_string($_POST['new_username']);
+            $new_full_name = $conn->real_escape_string($_POST['new_full_name']);
+            $new_email = $conn->real_escape_string($_POST['new_email']);
+            $new_contact_number = $conn->real_escape_string($_POST['new_contact_number']);
+            $new_role = $conn->real_escape_string($_POST['new_role']);
+            $new_password = $_POST['new_password'];
+
+            // Validate role
+            if (!in_array($new_role, ['office_staff', 'admin'])) {
+                $error_message = "Invalid role selected.";
+            } elseif (strlen($new_password) < 6) {
+                $error_message = "Password must be at least 6 characters long.";
+            } else {
+                // Check if username already exists
+                $check_username = $conn->prepare("SELECT staff_id FROM office_staff WHERE username = ?");
+                $check_username->bind_param("s", $new_username);
+                $check_username->execute();
+                $result = $check_username->get_result();
+
+                if ($result->num_rows > 0) {
+                    $error_message = "Username already exists. Please choose a different one.";
+                } else {
+                    // Hash password
+                    $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+
+                    // Insert new account
+                    $insert_stmt = $conn->prepare("INSERT INTO office_staff (username, password, full_name, email, contact_number, role, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
+                    $insert_stmt->bind_param("ssssss", $new_username, $hashed_password, $new_full_name, $new_email, $new_contact_number, $new_role);
+
+                    if ($insert_stmt->execute()) {
+                        $success_message = "Account created successfully!";
+                        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+                    } else {
+                        $error_message = "Failed to create account: " . $conn->error;
+                    }
+                }
+            }
         }
     }
 }
@@ -328,8 +380,13 @@ $profile_picture_url = !empty($admin['profile_picture'])
                             <h1><?php echo htmlspecialchars($admin['full_name'] ?? $admin['username'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></h1>
                             <p><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($admin['email'] ?? 'No email set', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></p>
                             <p><i class="fas fa-phone"></i> <?php echo htmlspecialchars($admin['contact_number'] ?? 'No contact number set', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></p>
-                            <p><i class="fas fa-user-shield"></i> Administrator</p>
-                            <span class="admin-badge"><i class="fas fa-crown me-1"></i> Admin Access</span>
+                            <p><i class="fas fa-user-shield"></i> <?php echo htmlspecialchars(($_SESSION['role'] === 'admin') ? 'Administrator' : 'Office Staff', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></p>
+                            <?php if ($_SESSION['role'] === 'admin'): ?>
+                                <span class="admin-badge"><i class="fas fa-crown me-1"></i> Admin Access</span>
+                                <button type="button" class="btn btn-success mt-2" data-bs-toggle="modal" data-bs-target="#createAccountModal">
+                                    <i class="fas fa-user-plus me-1"></i> Create Account
+                                </button>
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -614,10 +671,103 @@ $profile_picture_url = !empty($admin['profile_picture'])
                 </div>
             </div>
         </main>
+
+        <!-- Create Account Modal -->
+        <?php if ($_SESSION['role'] === 'admin'): ?>
+        <div class="modal fade" id="createAccountModal" tabindex="-1" aria-labelledby="createAccountModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createAccountModalLabel"><i class="fas fa-user-plus me-2"></i>Create New Account</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form method="POST" action="">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="create_username" class="form-label">Username *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                            <input type="text" class="form-control" id="create_username" name="new_username" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="create_full_name" class="form-label">Full Name</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-id-card"></i></span>
+                                            <input type="text" class="form-control" id="create_full_name" name="new_full_name">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="create_email" class="form-label">Email</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                            <input type="email" class="form-control" id="create_email" name="new_email">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="create_contact_number" class="form-label">Contact Number</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                            <input type="text" class="form-control" id="create_contact_number" name="new_contact_number" pattern="09[0-9]{9}" title="Please enter a valid 11-digit Philippine mobile number starting with '09'">
+                                        </div>
+                                        <small class="form-text text-muted">Format: 09XXXXXXXXX (11 digits)</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="create_role" class="form-label">Role *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-user-tag"></i></span>
+                                            <select class="form-control" id="create_role" name="new_role" required>
+                                                <option value="office_staff">Office Staff</option>
+                                                <option value="admin">Administrator</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="create_password" class="form-label">Password *</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                            <input type="password" class="form-control" id="create_password" name="new_password" required minlength="6">
+                                            <span class="input-group-text password-toggle" data-target="create_password" style="cursor: pointer;">
+                                                <i class="fas fa-eye"></i>
+                                            </span>
+                                        </div>
+                                        <small class="form-text text-muted">Minimum 6 characters</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" name="create_account" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Create Account
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Profile specific scripts -->
     <script>
